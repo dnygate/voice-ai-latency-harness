@@ -1,4 +1,4 @@
-# voice-ai-harness
+# voice-ai-latency-harness
 
 Measures **mouth-to-ear response latency** for voice AI systems on a real SIP/RTP media
 path: end of the caller's speech to arrival of the system's first response audio.
@@ -9,6 +9,8 @@ the sum.
 
 See [METHOD.md](METHOD.md) for definitions, the uncertainty budget, and validated
 instrument accuracy. Read it before quoting any number this produces.
+[VALIDATION.md](VALIDATION.md) records per-machine validation results; a figure is
+only as trustworthy as the row of the machine that produced it.
 
 ## Quick start
 

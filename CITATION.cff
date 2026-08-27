@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: voice-ai-latency-harness
+message: >-
+    If you use this software or its method, please cite it. If you cite the
+    measurements rather than the tool, cite the paper instead once published.
+type: software
+authors:
+    - given-names: Daniel
+      family-names: Nygate
+      affiliation: Hudl Communications, Inc. (UnifiedEdge)
+      orcid: https://orcid.org/0009-0002-6472-4422
+repository-code: https://github.com/dnygate/voice-ai-latency-harness
+license: Apache-2.0
+version: 0.1.0
+date-released: 2026-08-21
+keywords:
+    - voice AI
+    - conversational latency
+    - RTP
+    - SIP
+    - speech recognition
+    - measurement
+abstract: >-
+    An instrument for measuring mouth-to-ear response latency of conversational
+    voice AI systems at the RTP egress reference point: the interval from the end
+    of a caller's utterance to the arrival of the system's first response audio.
+    Validated to sub-millisecond bias against known programmed delays.

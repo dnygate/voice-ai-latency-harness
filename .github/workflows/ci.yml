@@ -1,0 +1,36 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: pip install numpy scipy pytest
+      - name: Preflight
+        # Informational only. Shared CI runners cannot pace a frame grid, so a marginal
+        # verdict is expected. It runs so the log records what the runner could do.
+        run: python -m harness.preflight || true
+      - name: Unit tests
+        # The stage 2 loopback test skips itself when host pacing fails QC, which is the
+        # normal outcome on a shared runner. Everything else must pass, including the
+        # G.711 golden vectors on 3.13 where audioop no longer exists.
+        run: python -m pytest tests -q
+      - name: Stage 1 accuracy sweep
+        # Insensitive to host timing by construction, so this must pass everywhere. If it
+        # ever fails on a CI runner, the instrument is wrong rather than the runner.
+        run: python -m harness.validate --quick
