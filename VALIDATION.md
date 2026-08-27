@@ -31,9 +31,10 @@ rather than held back until all four exist.
 2. `python -m harness.validate --json results/validation/<label>-<date>-stage1.json`
 3. `python -m harness.loopback --json results/validation/<label>-<date>-stage2.json`
 
-Commit the JSON alongside the row. Record the operating system, Python version, power
-state and any notable competing load, because those conditions are part of the
-result. Choose a short stable label for the machine; never a hostname or a serial
+Commit the JSON alongside the row. The date in the filename and the row is the date
+the run executed, which may precede the commit. Record the operating system, Python
+version, power state and any notable competing load, because those conditions are
+part of the result. Choose a short stable label for the machine; never a hostname or a serial
 number.
 
 ## Machines

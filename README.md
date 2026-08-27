@@ -30,13 +30,18 @@ before the harness is pointed at a real system.
 | stage | what it proves | status |
 |---|---|---|
 | 1. in-process | metric arithmetic, onset detection, QC gates | **passing** |
-| 2. UDP loopback | live capture path and its timestamping | **passing** |
+| 2. UDP loopback | live capture path and its timestamping | **passing**, per machine ([VALIDATION.md](VALIDATION.md)) |
 | 3. remote + netem | end to end across a real NIC, two clocks | not implemented |
 | 4. SIP caller | real calls against a real system | not implemented |
 
-Instrument accuracy — stage 1: **bias −0.40 ms, p95 |error| 2.38 ms** on a clean G.711
+Instrument accuracy, stage 1: **bias −0.40 ms, p95 |error| 2.38 ms** on a clean G.711
 channel with 20 ms frames, t0 annotation exact with zero variance. Stage 2 over real
-sockets: **bias +0.35 ms, sd 0.06 ms**.
+sockets, on the reference host documented in [METHOD.md](METHOD.md) §5.1: **bias
++0.35 ms, sd 0.06 ms** across 15 calls. That run predates the per-machine ledger, so
+its raw JSON is not in the repository. Stage 2 is a property of each machine: the
+stage 2 artifact that *is* committed shows a development laptop being refused by QC
+(0/20 usable calls), which is the designed behaviour for a host that cannot pace a
+frame grid. [VALIDATION.md](VALIDATION.md) holds the per-machine record.
 
 Run [`python -m harness.preflight`](harness/preflight.py) on any new machine first: it
 measures whether that host can pace a frame grid accurately enough to be trusted.

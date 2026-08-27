@@ -173,6 +173,12 @@ Pacing is a property of the host, not the code. `harness.preflight` measures it 
 seconds and should be run on any machine before a figure from that machine is trusted.
 Stage 1 is insensitive to host timing and is always runnable.
 
+Per-machine outcomes, including refusals, are recorded in `VALIDATION.md` at the
+repository root with the raw JSON committed alongside. A power-managed laptop refused
+by QC is the gate working as designed, and preflight predicts that outcome before any
+call is placed, which is the answer to whether stage 2 timing on such a host is
+representative: an unfit host is detected and excluded rather than averaged in.
+
 ## 6. Five findings that changed the method
 
 Recorded because each is a mistake a reader may be making.
