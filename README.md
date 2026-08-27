@@ -17,7 +17,7 @@ only as trustworthy as the row of the machine that produced it.
 ## Quick start
 
     pip install numpy scipy pytest
-    python -m pytest tests -q          # 23 tests, ~3 s
+    python -m pytest tests -q          # 25 tests, ~7 s
     python -m harness.validate        # instrument accuracy sweep, ~40 s
 
 `validate` replies to each prompt at a known delay and reports how accurately that
@@ -39,9 +39,6 @@ sockets: **bias +0.35 ms, sd 0.06 ms**.
 
 Run [`python -m harness.preflight`](harness/preflight.py) on any new machine first: it
 measures whether that host can pace a frame grid accurately enough to be trusted.
-See [OFFLINE.md](OFFLINE.md) for working without network, [METHOD.md](METHOD.md) for
-the specification, [PAPER_OUTLINE.md](PAPER_OUTLINE.md) for the write-up plan, and
-[EXECUTION.md](EXECUTION.md) for the runbook.
 
 ## Layout
 
@@ -53,7 +50,7 @@ the specification, [PAPER_OUTLINE.md](PAPER_OUTLINE.md) for the write-up plan, a
     harness/validate.py stage 1 sweep with analytically predicted gates
     harness/loopback.py stage 2 over real UDP sockets, hybrid sleep+spin pacing
     harness/preflight.py host capability check: can this machine hold a frame grid
-    tests/              correctness, including G.711 against the audioop oracle
+    tests/              correctness, including G.711 against frozen golden vectors
 
 ## Design rules
 
