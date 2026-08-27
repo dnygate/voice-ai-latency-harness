@@ -1,6 +1,7 @@
 # voice-ai-latency-harness
 
 [![tests](https://github.com/dnygate/voice-ai-latency-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/dnygate/voice-ai-latency-harness/actions/workflows/ci.yml)
+[![DOI](https://zenodo.org/badge/1341998349.svg)](https://doi.org/10.5281/zenodo.22124823)
 
 Measures **mouth-to-ear response latency** for voice AI systems on a real SIP/RTP media
 path: end of the caller's speech to arrival of the system's first response audio.

@@ -10,6 +10,14 @@ authors:
       affiliation: Hudl Communications, Inc. (UnifiedEdge)
       orcid: https://orcid.org/0009-0002-6472-4422
 repository-code: https://github.com/dnygate/voice-ai-latency-harness
+doi: 10.5281/zenodo.22124823
+identifiers:
+    - type: doi
+      value: 10.5281/zenodo.22124823
+      description: Concept DOI, resolves to the latest release
+    - type: doi
+      value: 10.5281/zenodo.22124824
+      description: Version DOI for v0.1.0
 license: Apache-2.0
 version: 0.1.0
 date-released: 2026-08-27
