@@ -14,12 +14,9 @@ doi: 10.5281/zenodo.22124823
 identifiers:
     - type: doi
       value: 10.5281/zenodo.22124823
-      description: Concept DOI, resolves to the latest release
-    - type: doi
-      value: 10.5281/zenodo.22124824
-      description: Version DOI for v0.1.0
+      description: Concept DOI, resolves to the latest release; per-version DOIs are on the Zenodo record
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 date-released: 2026-08-27
 keywords:
     - voice AI
