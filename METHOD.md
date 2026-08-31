@@ -92,6 +92,69 @@ a hard onset the spread is under 1 ms; on a 150 ms TTS ramp it approaches 10 ms.
 
 Levels are in dBov, referenced to full-scale RMS 32768.
 
+### 2.3 The greeting is not a response
+
+Nearly every deployed conversational system speaks first, usually within a few hundred
+milliseconds of the call being answered. That audio answers nothing, because the caller has
+not yet said anything for it to answer.
+
+Response-onset detection must therefore begin after the greeting has finished, and the
+capture has to record where that was. Detection over the whole received stream finds the
+greeting rather than the response, and because the greeting precedes t0 the resulting MRL is
+large and negative. A signed metric has no natural floor to catch that, and §2 explicitly
+licenses negative values as real behaviour, so the wrong number looks like a legitimate one.
+On a synthetic capture with an 800 ms greeting beginning at 200 ms and a true MRL of 900 ms,
+the measured value was −2085 ms, an error of −2985 ms, and the call passed quality control.
+
+The greeting also contaminates the noise floor that §2.2 needs in order to set onset
+thresholds. That floor is estimated from received audio arriving before t0, on the
+assumption that the system is silent while the caller is still speaking, and a greeting
+inside that window raises the estimate. On the same capture it moved by 1.35 dB, which the
+tenth-percentile estimator limited without preventing.
+
+`greeting_end_sample` is therefore carried in the capture, in the received stream's own
+sample domain, and both onset detection and noise-floor estimation begin after it. A system
+with no greeting records zero, and nothing about the measurement changes.
+
+**Time to greeting** is a separate quantity worth reporting wherever the call flow permits
+it, being the interval from the call being answered to the onset of the system's first
+audio. It shares no terms with MRL, since no caller utterance is involved, and it describes
+something callers experience directly. A system that holds the line silent for three seconds
+after answering is unpleasant to use whatever its MRL turns out to be, and nobody publishes
+that figure either.
+
+The harness must not begin transmitting while the greeting is still playing. A system with
+barge-in detection stops speaking when it hears the caller, which truncates the greeting and
+alters the very interaction being measured.
+
+### 2.4 Response continuity, and filler audio
+
+A system that emits an earcon, a breath or a filled pause while its model is still
+generating delivers audio quickly and information slowly. Under §2 alone it records a low
+MRL and so compares favourably with a system that stays quiet and then answers, which
+rewards the wrong behaviour and can be gamed in an afternoon by adding a beep.
+
+Resolving this by identifying which audio carries meaning would require recognising content,
+and a metric containing a judgement about meaning cannot be re-derived by a reviewer from a
+published capture. The discriminator is therefore structural. Filler is followed by silence
+before the substantive response begins, and continuous speech is not, so the gap is
+measurable in the same sample domain the onset detector already works in.
+
+Within a window of 2000 ms after t1, the longest interval below the onset threshold is
+measured, excluding intervals attributable to lost or late-discarded frames, because a
+degraded channel produces gaps that resemble deliberate pauses. Where that interval exceeds
+150 ms the response is discontiguous, the flag `discontiguous_response` is raised, and a
+second onset is reported at the start of the final contiguous segment.
+
+Both onsets are then published together. MRL keeps its existing definition, so no figure
+already measured changes, and a reader can see whether the two differ and by how much.
+
+The 2000 ms window and the 150 ms gap are defaults fixed in this specification rather than
+free parameters, for the reason given in §2.2: figures whose parameters differ cannot be
+compared even when each is internally correct. They must be stated alongside any figure
+derived under them, and revising them is a change to this document rather than to a
+configuration file.
+
 ## 3. Deriving metrics offline
 
 Captures store raw payloads and raw timestamps only. Nothing derived is ever written
@@ -179,7 +242,7 @@ by QC is the gate working as designed, and preflight predicts that outcome befor
 call is placed, which is the answer to whether stage 2 timing on such a host is
 representative: an unfit host is detected and excluded rather than averaged in.
 
-## 6. Six findings that changed the method
+## 6. Seven findings that changed the method
 
 Recorded because each is a mistake a reader may be making.
 
@@ -219,6 +282,20 @@ physically possible, appearing as a −27 ms latency bias that looked like a bug
 playout model. Jitter is now one-sided gamma (shape 2). Sender pacing slop stays
 symmetric, because a timer-driven sender genuinely can fire early or late — a different
 physical mechanism, correctly modelled differently.
+
+**A greeting is a response to nothing, and a signed metric cannot notice.** Onset
+detection scanned the received stream from its first sample, which is correct against a
+reference responder that stays quiet until it replies and wrong against every deployed
+system, because deployed systems say hello. The greeting arrives before t0, gets detected
+as the response, and yields a large negative MRL. A capture carrying an 800 ms greeting
+and a true MRL of 900 ms measured −2085 ms, an error of −2985 ms, and passed quality
+control on the way through. §2 licenses negative values as genuine behaviour, so there was
+no floor for the wrong answer to trip over. The same greeting sat inside the window used to
+estimate the noise floor and moved it 1.35 dB, shifting every onset threshold derived from
+it. Detection and floor estimation now both begin at `greeting_end_sample`, recorded in the
+capture. This one could not have been caught by any test that existed, because the
+synthetic generator had no greeting to produce; it was found by asking what a real call
+looks like, and confirmed by teaching the generator to make one.
 
 **An advisory flag nobody can see is not an advisory.** The stage 3 console printed QC
 flags only when a call failed, so a jittered sweep in which 38 of 40 calls raised

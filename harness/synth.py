@@ -133,6 +133,8 @@ def reference_capture(
     rx_base_transit_ms: float = 0.0,
     rx_loss_rate: float = 0.0,
     rx_floor_dbov: float = -62.0,
+    greeting: np.ndarray | None = None,
+    greeting_start_ms: float = 200.0,
     seed: int = 0,
     call_id: str = "ref",
     run_id: str = "validation",
@@ -194,10 +196,25 @@ def reference_capture(
     total_rx_samples = n_rx_frames * spf
     rx_pcm = noise_at(total_rx_samples / SR, rx_floor_dbov, seed=seed + 3)[:total_rx_samples]
 
+    # An unprompted greeting, if the system under test has one. Nearly every deployed
+    # conversational system opens with "hello, how can I help", arriving within a few
+    # hundred milliseconds of the call being answered and therefore long before t0. It is
+    # not a response to anything, so it must never be mistaken for one, and a synthetic
+    # generator that cannot produce it cannot test whether the analyser is fooled by it.
+    greeting_end_sample = 0
+    if greeting is not None and len(greeting):
+        g_start = int(round(greeting_start_ms * SR / 1000.0))
+        g_end = min(total_rx_samples, g_start + len(greeting))
+        if g_end > g_start:
+            rx_pcm[g_start:g_end] = greeting[: g_end - g_start]
+            greeting_end_sample = g_end
+
     # Sample index in the rx grid at which the response must begin.
     resp_start = int(round((t_resp_ns - rx_grid_start) * SR / 1e9))
     if resp_start < 0:
         raise ValueError("delay_ms places the response before the rx stream starts")
+    if greeting_end_sample > resp_start:
+        raise ValueError("greeting overlaps the response; shorten it or raise delay_ms")
     end = min(total_rx_samples, resp_start + len(response))
     if end > resp_start:
         rx_pcm[resp_start:end] = response[: end - resp_start]
@@ -222,6 +239,7 @@ def reference_capture(
         call_id=call_id, prompt_id="synthetic", speech_end_sample=int(speech_end_sample),
         codec=codec, ptime_ms=ptime_ms, sut_label="reference-responder",
         concurrency=concurrency, run_id=run_id, ground_truth_ms=float(delay_ms),
+        greeting_end_sample=int(greeting_end_sample),
         notes={"tx_jitter_ms": tx_jitter_ms, "rx_jitter_ms": rx_jitter_ms,
                "rx_base_transit_ms": rx_base_transit_ms,
                "rx_loss_rate": rx_loss_rate, "rx_floor_dbov": rx_floor_dbov, "seed": seed},

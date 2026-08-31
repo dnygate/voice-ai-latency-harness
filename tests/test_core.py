@@ -217,6 +217,91 @@ def test_loopback_recovers_known_delay_over_real_sockets():
     assert abs(float(np.mean(residuals))) < 5.0, residuals
 
 
+# ------------------------------------------- greetings and response continuity (§2.3, §2.4)
+
+def _greeting_capture(greeting_s: float | None, delay_ms: float = 900.0, seed: int = 7):
+    from harness.synth import noise_at  # noqa: F401  (kept close to its siblings)
+
+    prompt, _, ann = annotated_prompt(seed=seed)
+    g = None if greeting_s is None else speechlike(greeting_s, seed=999, onset="hard")
+    return reference_capture(delay_ms, prompt=prompt, speech_end_sample=ann.speech_end_sample,
+                             greeting=g, greeting_start_ms=200.0, seed=seed)
+
+
+def test_greeting_is_not_mistaken_for_a_response():
+    """METHOD.md §2.3. Regression for a defect no synthetic test could previously reach,
+    because the reference responder had no greeting to be fooled by. Scanning the whole
+    received stream found the greeting, which precedes t0, and produced −2085 ms against a
+    true 900 ms. QC passed it, because §2 licenses negative MRL as real behaviour."""
+    for greeting_s in (None, 0.3, 0.8, 1.5):
+        res = analyse_capture(_greeting_capture(greeting_s))
+        assert abs(res.mrl_ms - 900.0) < 5.0, (greeting_s, res.mrl_ms)
+        assert "response_before_speech_end" not in res.qc.flags
+
+
+def test_greeting_does_not_contaminate_the_noise_floor():
+    """The floor is meant to describe channel noise, and it sets every onset threshold
+    derived from it. A greeting inside the estimation window is speech, and moved the
+    estimate by 1.35 dB before the window was made to start after it."""
+    clean = analyse_capture(_greeting_capture(None)).qc.rx_noise_floor_dbov
+    greeted = analyse_capture(_greeting_capture(0.8)).qc.rx_noise_floor_dbov
+    assert abs(greeted - clean) < 0.5, (clean, greeted)
+
+
+def test_a_greeting_that_swallows_the_noise_window_is_flagged():
+    """Refusing to guess is the correct response to having nowhere left to measure."""
+    res = analyse_capture(_greeting_capture(2.0))
+    assert "short_noise_window" in res.qc.flags
+
+
+def _filler_response():
+    """150 ms of filler, 500 ms of nothing, then the real answer."""
+    answer = speechlike(1.0, seed=2, onset="hard")
+    from harness.synth import noise_at
+    return answer, np.concatenate([
+        speechlike(0.15, seed=1, onset="hard"), noise_at(0.5, -62.0, seed=5), answer,
+    ]).astype(np.int16)
+
+
+def test_continuous_response_reports_one_onset_twice():
+    """METHOD.md §2.4. A system that simply answers must not be flagged, and its two
+    onsets must agree, or the flag would fire on everything and mean nothing."""
+    answer, _ = _filler_response()
+    prompt, _, ann = annotated_prompt(seed=7)
+    res = analyse_capture(reference_capture(
+        900.0, prompt=prompt, speech_end_sample=ann.speech_end_sample, response=answer, seed=7))
+    v = res.variants["headline"]
+    assert abs(v.mrl_contiguous_ms - v.mrl_ms) < 1.0
+    assert v.gap_ms <= 150.0
+    assert "discontiguous_response" not in res.qc.flags
+
+
+def test_filler_audio_is_separated_from_the_substantive_response():
+    """The system emits a noise at 900 ms and says something useful at 1550 ms. Reporting
+    only the first would rank it above a system that answered directly at 1000 ms."""
+    _, filler = _filler_response()
+    prompt, _, ann = annotated_prompt(seed=7)
+    res = analyse_capture(reference_capture(
+        900.0, prompt=prompt, speech_end_sample=ann.speech_end_sample, response=filler, seed=7))
+    v = res.variants["headline"]
+    assert abs(v.mrl_ms - 900.0) < 5.0
+    assert abs(v.mrl_contiguous_ms - 1550.0) < 20.0, v.mrl_contiguous_ms
+    assert abs(v.gap_ms - 500.0) < 20.0
+    assert "discontiguous_response" in res.qc.flags
+
+
+def test_packet_loss_does_not_manufacture_filler():
+    """A missing frame leaves a hole that looks exactly like a deliberate pause. Counting
+    it would let a degraded channel flag a system that emitted no filler at all."""
+    answer, _ = _filler_response()
+    prompt, _, ann = annotated_prompt(seed=11)
+    res = analyse_capture(reference_capture(
+        900.0, prompt=prompt, speech_end_sample=ann.speech_end_sample, response=answer,
+        rx_loss_rate=0.10, seed=11))
+    assert res.qc.rx_loss_pct > 5.0, "test needs real loss to be meaningful"
+    assert "discontiguous_response" not in res.qc.flags
+
+
 # ------------------------------------------------------------ stage 3, two hosts
 
 def _sweep(path: Path, residuals: list[float], self_err: float = 0.01) -> Path:

@@ -73,6 +73,13 @@ DEFAULT_VARIANTS: tuple[OnsetVariant, ...] = (
 
 HEADLINE_VARIANT = "headline"
 
+# METHOD.md §2.4. Fixed in the specification rather than configurable, for the same reason
+# the onset thresholds are: two parties measuring under different parameters produce
+# figures that cannot be compared even when each is internally correct. Changing these is
+# a change to METHOD.md.
+CONTINUITY_WINDOW_MS = 2000.0
+CONTINUITY_GAP_MS = 150.0
+
 
 @dataclass
 class QC:
@@ -112,6 +119,13 @@ class VariantResult:
     mrl_ms: float       # ingress MRL, kept as `mrl_ms` for brevity in aggregation
     t1_playout_ns: int = -1
     mrl_playout_ms: float = float("nan")
+    # METHOD.md §2.4. `gap_ms` is the longest silence within the continuity window after
+    # onset; the contiguous figures locate the start of uninterrupted speech. On a system
+    # that answers straight away these equal the onset figures. On one that emits a filled
+    # pause first they do not, and the difference is the point.
+    gap_ms: float = 0.0
+    onset_contiguous_sample: int = -1
+    mrl_contiguous_ms: float = float("nan")
 
 
 @dataclass
@@ -201,12 +215,67 @@ def _rfc3550_jitter(rx: list[Packet], sr: int) -> float:
     return float(j * 1000.0 / sr)
 
 
+def _onset_threshold(variant: OnsetVariant, noise_floor_dbov: float) -> float:
+    """The level a frame must exceed to count as speech under this variant.
+
+    Shared by onset detection and by the continuity measurement in METHOD.md §2.4, which
+    have to agree: a gap defined against a different threshold from the onset it follows
+    would be measuring two different notions of silence in one figure.
+    """
+    return max(noise_floor_dbov + variant.margin_db, variant.abs_dbov)
+
+
+def _response_continuity(samples: np.ndarray, owner: np.ndarray, onset: int,
+                         thresh_dbov: float, sr: int,
+                         window_ms: float = CONTINUITY_WINDOW_MS,
+                         gap_ms: float = CONTINUITY_GAP_MS) -> tuple[float, int]:
+    """Longest silence after onset, and where uninterrupted speech begins.
+
+    Filler audio, an earcon or a filled pause, is followed by silence before the
+    substantive response starts, while continuous speech is not. That structural
+    difference distinguishes them without anyone having to recognise content, which
+    matters because a metric carrying a judgement about meaning cannot be re-derived from
+    a published capture by a reviewer. See METHOD.md §2.4.
+
+    Frames no packet carried are treated as unknown rather than as silence. A lost or
+    late-discarded frame leaves a hole indistinguishable from a deliberate pause, so
+    counting it would let a degraded channel manufacture filler and flag a system that
+    never emitted any.
+
+    Returns (longest gap in ms, sample index at which the final contiguous segment starts).
+    """
+    win = max(1, int(round(sr * 0.005)))
+    end = min(len(samples), onset + int(round(window_ms * sr / 1000.0)))
+    if end - onset < win:
+        return 0.0, onset
+
+    starts, dbov = frame_energy_dbov(samples[onset:end], win, win)
+    gap_frames = max(1, int(round(gap_ms * sr / (1000.0 * win))))
+
+    longest = 0
+    resumes_at: int | None = None
+    run = 0
+    for k in range(len(starts)):
+        s = onset + int(starts[k])
+        carried = bool(np.all(owner[s : s + win] >= 0)) if s + win <= len(owner) else False
+        if dbov[k] <= thresh_dbov and carried:
+            run += 1
+        else:
+            if run >= gap_frames:
+                resumes_at = s          # first audible frame after a qualifying gap
+            longest = max(longest, run)
+            run = 0
+    longest = max(longest, run)         # a gap may run to the end of the window
+
+    return 1000.0 * longest * win / sr, (resumes_at if resumes_at is not None else onset)
+
+
 def _detect_onset(samples: np.ndarray, variant: OnsetVariant, noise_floor_dbov: float,
                   sr: int, search_from: int = 0) -> int | None:
     win = max(1, int(round(sr * 0.005)))   # 5 ms analysis window
     hop = win
     starts, dbov = frame_energy_dbov(samples, win, hop)
-    thresh = max(noise_floor_dbov + variant.margin_db, variant.abs_dbov)
+    thresh = _onset_threshold(variant, noise_floor_dbov)
     need = max(1, int(round(variant.sustain_ms / (1000.0 * hop / sr))))
 
     above = dbov > thresh
@@ -283,21 +352,29 @@ def analyse_capture(cap: Capture, variants: Iterable[OnsetVariant] = DEFAULT_VAR
 
     # Noise floor is estimated from rx audio that arrived before t0 - guard, i.e. while
     # the caller was still speaking and the system had not yet answered. Capped at 1 s.
-    noise_end = 0
+    #
+    # The window starts after any greeting. A greeting lands inside this interval, is
+    # speech rather than channel noise, and raises the floor estimate, which then shifts
+    # every onset threshold derived from it. Measured at 1.35 dB on a capture carrying an
+    # 800 ms greeting, limited by the tenth-percentile estimator rather than avoided by it.
+    # See METHOD.md §2.3.
+    greeting_end = max(0, min(int(h.greeting_end_sample), len(rx_s)))
+    noise_start = greeting_end
+    noise_end = noise_start
     if len(rx_owner):
         cutoff = t0 - int(noise_guard_ms * 1e6)
-        for i, p in enumerate(sorted(rx, key=lambda p: p.rtp_ts)):
+        for p in sorted(rx, key=lambda p: p.rtp_ts):
             if p.t_mono_ns >= cutoff:
                 break
             noise_end = max(noise_end, (p.rtp_ts - rx_base) + spf)
-        noise_end = min(noise_end, sr)  # 1 s cap
-    if noise_end < int(0.05 * sr):
-        noise_end = min(len(rx_s), int(0.1 * sr))
+        noise_end = min(noise_end, noise_start + sr)  # 1 s of noise is ample
+    if noise_end - noise_start < int(0.05 * sr):
+        noise_end = min(len(rx_s), noise_start + int(0.1 * sr))
         if len(rx_s):
             qc.flags.append("short_noise_window")
-    qc.noise_window_ms = 1000.0 * noise_end / sr
-    if noise_end > 0:
-        _, nf = frame_energy_dbov(rx_s[:noise_end], max(1, int(0.005 * sr)),
+    qc.noise_window_ms = 1000.0 * max(0, noise_end - noise_start) / sr
+    if noise_end > noise_start:
+        _, nf = frame_energy_dbov(rx_s[noise_start:noise_end], max(1, int(0.005 * sr)),
                                   max(1, int(0.005 * sr)))
         qc.rx_noise_floor_dbov = float(np.percentile(nf, 10.0))
     else:
@@ -306,7 +383,12 @@ def analyse_capture(cap: Capture, variants: Iterable[OnsetVariant] = DEFAULT_VAR
     # ---- t1 per variant -------------------------------------------------------
     results: dict[str, VariantResult] = {}
     for v in variants:
-        onset = _detect_onset(rx_s, v, qc.rx_noise_floor_dbov, sr) if len(rx_s) else None
+        # Search begins after the greeting, never at zero. A greeting precedes t0 and is
+        # not a response to anything, so detecting it yields a large negative MRL that
+        # §2 licenses as legitimate behaviour and QC therefore waves through. Measured at
+        # −2985 ms error on an 800 ms greeting. See METHOD.md §2.3.
+        onset = (_detect_onset(rx_s, v, qc.rx_noise_floor_dbov, sr, search_from=greeting_end)
+                 if len(rx_s) else None)
         if onset is None:
             results[v.name] = VariantResult(v.name, -1, -1, float("nan"))
             continue
@@ -315,9 +397,15 @@ def analyse_capture(cap: Capture, variants: Iterable[OnsetVariant] = DEFAULT_VAR
             results[v.name] = VariantResult(v.name, onset, -1, float("nan"))
             continue
         t1_play = anchor_ns + onset * 1e9 / sr
+        gap_ms, contig = _response_continuity(
+            rx_s, rx_owner, onset, _onset_threshold(v, qc.rx_noise_floor_dbov), sr)
+        t1_contig = _sample_time_ns(contig, rx_owner, rx, rx_base, sr)
         results[v.name] = VariantResult(
             v.name, int(onset), int(t1), (t1 - t0) / 1e6,
             t1_playout_ns=int(t1_play), mrl_playout_ms=(t1_play - t0) / 1e6,
+            gap_ms=round(gap_ms, 3), onset_contiguous_sample=int(contig),
+            mrl_contiguous_ms=(float("nan") if t1_contig is None
+                               else (t1_contig - t0) / 1e6),
         )
 
     head = results.get(HEADLINE_VARIANT)
@@ -327,6 +415,11 @@ def analyse_capture(cap: Capture, variants: Iterable[OnsetVariant] = DEFAULT_VAR
         qc.flags.append("onset_in_first_frame")
     if head is not None and np.isfinite(head.mrl_ms) and head.mrl_ms < 0:
         qc.flags.append("response_before_speech_end")
+    # Advisory, and informational rather than a fault: it describes the system under test
+    # rather than the measurement. A caller of this figure needs it, because first audio
+    # and first substantive audio differ on a system that fills the wait with a noise.
+    if head is not None and head.gap_ms > CONTINUITY_GAP_MS:
+        qc.flags.append("discontiguous_response")
     # Advisory channel-quality flags. When either fires, onset localisation is deferred
     # by whole frames and the resulting MRL is an upper bound, not a point estimate.
     if (np.isfinite(qc.tx_pacing_max_dev_ms) and qc.tx_pacing_max_dev_ms > 5.0):

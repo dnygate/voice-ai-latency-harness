@@ -18,7 +18,7 @@ only as trustworthy as the row of the machine that produced it.
 ## Quick start
 
     pip install numpy scipy pytest
-    python -m pytest tests -q          # 34 tests, ~6 s
+    python -m pytest tests -q          # 40 tests, ~6 s
     python -m harness.validate        # instrument accuracy sweep, ~40 s
 
 `validate` replies to each prompt at a known delay and reports how accurately that
@@ -61,7 +61,8 @@ measures whether that host can pace a frame grid accurately enough to be trusted
     harness/analyse.py  offline metric derivation, both MRLs, QC gates
     harness/synth.py    signal generators and the known-delay reference responder
     harness/validate.py stage 1 sweep with analytically predicted gates
-    harness/loopback.py stage 2 over real UDP sockets, hybrid sleep+spin pacing
+    harness/loopback.py stage 2 over real UDP and stage 3 across two hosts, with a
+                        control channel and a differential gate against a baseline
     harness/preflight.py host capability check: can this machine hold a frame grid
     tests/              correctness, including G.711 against frozen golden vectors
 
@@ -79,6 +80,14 @@ uncertainty and it travels with the headline figure.
 
 **The harness refuses measurements it cannot trust.** Bad transmit pacing means an
 unreliable t0, so the call is dropped rather than reported.
+
+**A greeting is not a response.** Deployed systems speak first, before the caller has
+said anything, so onset detection begins after the greeting rather than at the start of
+the stream. Scanning from zero measured −2985 ms of error and passed quality control.
+
+**Filler is separated from the answer without interpreting it.** A system that plays a
+noise while it thinks is distinguished by the silence that follows, not by recognising
+what was said, so the figure stays reproducible from a published capture.
 
 ## Not in here
 

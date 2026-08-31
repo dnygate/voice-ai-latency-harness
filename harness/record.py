@@ -38,6 +38,12 @@ class CaptureHeader:
     prompt_id: str = ""
     prompt_sha256: str = ""
     speech_end_sample: int = -1  # in the prompt's own 8 kHz sample domain
+    # Where the system's unprompted greeting finished, in the received stream's own sample
+    # domain, or 0 if it had none. Response-onset detection must begin after this point:
+    # a greeting arrives before t0, is not a response to anything, and would otherwise be
+    # detected as one and yield a large negative MRL. Observed, not derived, so it belongs
+    # in the capture.
+    greeting_end_sample: int = 0
     codec: str = "pcmu"
     ptime_ms: float = 20.0
     sample_rate: int = 8000
