@@ -215,3 +215,118 @@ def test_loopback_recovers_known_delay_over_real_sockets():
         assert res.qc.rx_packets > 0
         residuals.append(res.mrl_ms - delay)
     assert abs(float(np.mean(residuals))) < 5.0, residuals
+
+
+# ------------------------------------------------------------ stage 3, two hosts
+
+def _sweep(path: Path, residuals: list[float], self_err: float = 0.01) -> Path:
+    """Write a sweep file of the shape `loopback.main` emits.
+
+    Residual sets are given explicitly rather than drawn randomly, because a gate test
+    that is itself stochastic tells you nothing on the run where it fails.
+    """
+    rows = [{"delay_ms": 137.0, "call": i, "residual_ms": r,
+             "mrl_ingress_ms": 137.0 + r, "mrl_playout_ms": 177.0 + r,
+             "responder_self_error_ms": self_err, "qc_ok": True, "qc_flags": []}
+            for i, r in enumerate(residuals)]
+    path.write_text(json.dumps({"host": "test-host", "python": "3.12.13", "stage": 3,
+                                "peer": "10.0.0.2:9000", "control_failures": 0,
+                                "rows": rows, "verdict": []}))
+    return path
+
+
+def _spread(mean: float, sd: float, n: int) -> list[float]:
+    """n values with exactly this mean and approximately this standard deviation."""
+    half = n // 2
+    return [mean - sd] * half + [mean + sd] * half
+
+
+def test_stage3_gate_recovers_injected_delay(tmp_path, capsys):
+    from harness.loopback import compare_sweeps
+
+    base = _sweep(tmp_path / "b.json", _spread(2.0, 0.5, 20))
+    netem = _sweep(tmp_path / "n.json", _spread(52.0, 0.5, 20))
+    assert compare_sweeps(str(base), str(netem), 50.0) == 0
+    assert "stage 3 passed" in capsys.readouterr().out
+
+
+def test_stage3_gate_detects_netem_not_applied(tmp_path, capsys):
+    """The most likely operator error: tc applied to the wrong interface, or not at all."""
+    from harness.loopback import compare_sweeps
+
+    base = _sweep(tmp_path / "b.json", _spread(2.0, 0.5, 20))
+    netem = _sweep(tmp_path / "n.json", _spread(2.1, 0.5, 20))
+    assert compare_sweeps(str(base), str(netem), 50.0) == 1
+    assert "not in force" in capsys.readouterr().out
+
+
+def test_stage3_gate_detects_delay_applied_to_both_legs(tmp_path, capsys):
+    from harness.loopback import compare_sweeps
+
+    base = _sweep(tmp_path / "b.json", _spread(2.0, 0.5, 20))
+    netem = _sweep(tmp_path / "n.json", _spread(102.0, 0.5, 20))
+    assert compare_sweeps(str(base), str(netem), 50.0) == 1
+    assert "twice the declared delay" in capsys.readouterr().out
+
+
+def test_stage3_gate_rejects_negative_baseline_residual(tmp_path, capsys):
+    """A response cannot arrive before the programmed delay plus minimum transit, so a
+    negative baseline is an arithmetic error rather than anything the path did."""
+    from harness.loopback import compare_sweeps
+
+    base = _sweep(tmp_path / "b.json", _spread(-39.5, 0.03, 20))
+    netem = _sweep(tmp_path / "n.json", _spread(-39.5, 0.03, 20))
+    assert compare_sweeps(str(base), str(netem), 50.0) == 1
+    assert "definitional or arithmetic error" in capsys.readouterr().out
+
+
+def test_stage3_gate_refuses_to_pass_an_underpowered_run(tmp_path, capsys):
+    """The difference lands on the declared delay exactly, but the spread is so wide that
+    the run cannot support the claim. Reporting a pass here would be dishonest, and the
+    fix is more calls rather than a wider tolerance."""
+    from harness.loopback import compare_sweeps
+
+    base = _sweep(tmp_path / "b.json", _spread(2.0, 8.0, 6))
+    netem = _sweep(tmp_path / "n.json", _spread(52.0, 8.0, 6))
+    assert compare_sweeps(str(base), str(netem), 50.0) == 1
+    out = capsys.readouterr().out
+    assert "INCONCLUSIVE" in out
+    assert "Do not widen the tolerance" in out
+
+
+def test_stage3_gate_needs_a_minimum_number_of_calls(tmp_path):
+    from harness.loopback import compare_sweeps
+
+    base = _sweep(tmp_path / "b.json", [2.0, 2.1])
+    netem = _sweep(tmp_path / "n.json", [52.0, 52.1])
+    assert compare_sweeps(str(base), str(netem), 50.0) == 1
+
+
+def test_control_datagrams_round_trip_and_reject_foreign_traffic():
+    from harness.loopback import _ctl_decode, _ctl_encode
+
+    msg = _ctl_decode(_ctl_encode("HELLO", {"spec": {"delay_ms": 137.0}}))
+    assert msg is not None and msg["kind"] == "HELLO"
+    assert msg["spec"]["delay_ms"] == 137.0
+    # Anything not carrying our magic is dropped rather than parsed. The control port will
+    # receive scans and stray datagrams on any reachable host.
+    assert _ctl_decode(b'{"kind": "HELLO"}') is None
+    assert _ctl_decode(b"not json at all") is None
+    assert _ctl_decode(b"\x80\x00\x00\x01") is None
+
+
+def test_remote_diag_preserves_responder_self_error():
+    """Only the self error crosses the wire; the absolute instants behind it are on the
+    responder's clock. The reconstruction must report the same number regardless."""
+    from harness.loopback import ResponderDiag
+
+    diag = ResponderDiag.from_remote({"triggered": True, "self_error_ms": 0.0074,
+                                      "frames_received": 150, "frames_sent": 60,
+                                      "pacing_max_ms": 0.31})
+    assert diag.triggered
+    assert abs(diag.self_error_ms - 0.0074) < 1e-9
+    assert diag.frames_received == 150
+    assert abs(diag.pacing.max_ms - 0.31) < 1e-12
+    # An untriggered responder has no self error to report, and nan is the honest answer
+    # rather than zero, which would understate the residual it feeds into.
+    assert not np.isfinite(ResponderDiag.from_remote({"triggered": False}).self_error_ms)
