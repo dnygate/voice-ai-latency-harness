@@ -302,6 +302,20 @@ def test_stage3_gate_needs_a_minimum_number_of_calls(tmp_path):
     assert compare_sweeps(str(base), str(netem), 50.0) == 1
 
 
+def test_advisory_flags_are_visible_on_a_passing_call():
+    """Regression. A stage 3 sweep once printed forty clean-looking calls while
+    thirty-eight carried a late-discard advisory, because flags were shown only on QC
+    failure. An advisory turns a point estimate into an upper bound, so it has to be
+    visible wherever the number is."""
+    from harness.loopback import _status
+
+    assert _status({"qc_ok": True, "qc_flags": []}) == "ok"
+    assert _status({"qc_ok": True, "qc_flags": ["high_late_discard"]}) == \
+        "ok, advisory high_late_discard"
+    assert "high_loss" in _status({"qc_ok": True, "qc_flags": ["high_loss", "high_late_discard"]})
+    assert _status({"qc_ok": False, "qc_flags": ["tx_pacing_out_of_spec"]}).startswith("QC FAIL")
+
+
 def test_control_datagrams_round_trip_and_reject_foreign_traffic():
     from harness.loopback import _ctl_decode, _ctl_encode
 

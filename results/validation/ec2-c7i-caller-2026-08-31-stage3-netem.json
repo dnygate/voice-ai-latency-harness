@@ -1,0 +1,686 @@
+{
+  "host": "Linux-7.0.0-1006-aws-x86_64-with-glibc2.43",
+  "python": "3.14.4",
+  "stage": 3,
+  "peer": "172.31.37.9:9000",
+  "control_failures": 0,
+  "rows": [
+    {
+      "delay_ms": 137.0,
+      "call": 0,
+      "mrl_ingress_ms": 192.316,
+      "mrl_playout_ms": 232.987,
+      "residual_ms": 55.316,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 183
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 1,
+      "mrl_ingress_ms": 181.268,
+      "mrl_playout_ms": 234.904,
+      "residual_ms": 44.268,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 183
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 2,
+      "mrl_ingress_ms": 185.058,
+      "mrl_playout_ms": 233.624,
+      "residual_ms": 48.058,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.007,
+      "tx_pacing_max_ms": 0.009,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 183
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 3,
+      "mrl_ingress_ms": 208.845,
+      "mrl_playout_ms": 235.193,
+      "residual_ms": 71.845,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 183
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 4,
+      "mrl_ingress_ms": 176.799,
+      "mrl_playout_ms": 240.184,
+      "residual_ms": 39.799,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 183
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 5,
+      "mrl_ingress_ms": 171.446,
+      "mrl_playout_ms": 240.184,
+      "residual_ms": 34.446,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 184
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 6,
+      "mrl_ingress_ms": 228.557,
+      "mrl_playout_ms": 232.694,
+      "residual_ms": 91.557,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 183
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 7,
+      "mrl_ingress_ms": 181.455,
+      "mrl_playout_ms": 233.626,
+      "residual_ms": 44.455,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 183
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 0,
+      "mrl_ingress_ms": 258.522,
+      "mrl_playout_ms": 337.032,
+      "residual_ms": 45.522,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 1,
+      "mrl_ingress_ms": 260.189,
+      "mrl_playout_ms": 315.867,
+      "residual_ms": 47.189,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 187
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 2,
+      "mrl_ingress_ms": 253.42,
+      "mrl_playout_ms": 314.299,
+      "residual_ms": 40.42,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 3,
+      "mrl_ingress_ms": 248.647,
+      "mrl_playout_ms": 316.633,
+      "residual_ms": 35.647,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 187
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 4,
+      "mrl_ingress_ms": 254.698,
+      "mrl_playout_ms": 315.424,
+      "residual_ms": 41.698,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.007,
+      "tx_pacing_max_ms": 0.011,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 187
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 5,
+      "mrl_ingress_ms": 274.365,
+      "mrl_playout_ms": 318.231,
+      "residual_ms": 61.365,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 187
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 6,
+      "mrl_ingress_ms": 263.545,
+      "mrl_playout_ms": 317.805,
+      "residual_ms": 50.545,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 7,
+      "mrl_ingress_ms": 252.186,
+      "mrl_playout_ms": 336.354,
+      "residual_ms": 39.186,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 0,
+      "mrl_ingress_ms": 390.809,
+      "mrl_playout_ms": 454.714,
+      "residual_ms": 37.809,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 194
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 1,
+      "mrl_ingress_ms": 402.909,
+      "mrl_playout_ms": 456.911,
+      "residual_ms": 49.909,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 194
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 2,
+      "mrl_ingress_ms": 394.735,
+      "mrl_playout_ms": 473.514,
+      "residual_ms": 41.735,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 195
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 3,
+      "mrl_ingress_ms": 395.07,
+      "mrl_playout_ms": 453.81,
+      "residual_ms": 42.07,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.004,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 194
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 4,
+      "mrl_ingress_ms": 396.117,
+      "mrl_playout_ms": 453.155,
+      "residual_ms": 43.117,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 194
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 5,
+      "mrl_ingress_ms": 400.208,
+      "mrl_playout_ms": 455.338,
+      "residual_ms": 47.208,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 194
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 6,
+      "mrl_ingress_ms": 413.007,
+      "mrl_playout_ms": 456.29,
+      "residual_ms": 60.007,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 195
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 7,
+      "mrl_ingress_ms": 407.158,
+      "mrl_playout_ms": 457.285,
+      "residual_ms": 54.158,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 194
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 0,
+      "mrl_ingress_ms": 492.5,
+      "mrl_playout_ms": 556.703,
+      "residual_ms": 35.5,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 199
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 1,
+      "mrl_ingress_ms": 495.674,
+      "mrl_playout_ms": 578.18,
+      "residual_ms": 38.674,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 200
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 2,
+      "mrl_ingress_ms": 497.284,
+      "mrl_playout_ms": 580.182,
+      "residual_ms": 40.284,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 200
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 3,
+      "mrl_ingress_ms": 503.934,
+      "mrl_playout_ms": 557.568,
+      "residual_ms": 46.934,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 200
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 4,
+      "mrl_ingress_ms": 520.671,
+      "mrl_playout_ms": 553.596,
+      "residual_ms": 63.671,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 199
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 5,
+      "mrl_ingress_ms": 503.108,
+      "mrl_playout_ms": 555.191,
+      "residual_ms": 46.108,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 200
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 6,
+      "mrl_ingress_ms": 510.624,
+      "mrl_playout_ms": 557.968,
+      "residual_ms": 53.624,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 200
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 7,
+      "mrl_ingress_ms": 492.699,
+      "mrl_playout_ms": 558.073,
+      "residual_ms": 35.699,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [],
+      "tx_packets": 150,
+      "rx_packets": 200
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 0,
+      "mrl_ingress_ms": 854.205,
+      "mrl_playout_ms": 918.272,
+      "residual_ms": 48.205,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.002,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 217
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 1,
+      "mrl_ingress_ms": 874.223,
+      "mrl_playout_ms": 914.209,
+      "residual_ms": 68.223,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 217
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 2,
+      "mrl_ingress_ms": 845.839,
+      "mrl_playout_ms": 936.843,
+      "residual_ms": 39.839,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 220
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 3,
+      "mrl_ingress_ms": 850.02,
+      "mrl_playout_ms": 913.993,
+      "residual_ms": 44.02,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 217
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 4,
+      "mrl_ingress_ms": 855.684,
+      "mrl_playout_ms": 915.236,
+      "residual_ms": 49.684,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 217
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 5,
+      "mrl_ingress_ms": 866.195,
+      "mrl_playout_ms": 916.568,
+      "residual_ms": 60.195,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 217
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 6,
+      "mrl_ingress_ms": 857.243,
+      "mrl_playout_ms": 915.302,
+      "residual_ms": 51.243,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.003,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 217
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 7,
+      "mrl_ingress_ms": 851.021,
+      "mrl_playout_ms": 916.692,
+      "residual_ms": 45.021,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.006,
+      "tx_pacing_max_ms": 0.009,
+      "rx_loss_pct": 0.0,
+      "qc_ok": true,
+      "qc_flags": [],
+      "tx_packets": 150,
+      "rx_packets": 218
+    }
+  ],
+  "verdict": []
+}

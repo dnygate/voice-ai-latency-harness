@@ -18,7 +18,7 @@ only as trustworthy as the row of the machine that produced it.
 ## Quick start
 
     pip install numpy scipy pytest
-    python -m pytest tests -q          # 33 tests, ~6 s
+    python -m pytest tests -q          # 34 tests, ~6 s
     python -m harness.validate        # instrument accuracy sweep, ~40 s
 
 `validate` replies to each prompt at a known delay and reports how accurately that
@@ -31,17 +31,24 @@ before the harness is pointed at a real system.
 |---|---|---|
 | 1. in-process | metric arithmetic, onset detection, QC gates | **passing** |
 | 2. UDP loopback | live capture path and its timestamping | **passing**, per machine ([VALIDATION.md](VALIDATION.md)) |
-| 3. remote + netem | end to end across a real NIC, two clocks | not implemented |
+| 3. remote + netem | end to end across a real NIC, two clocks | **passing**, per host pair ([VALIDATION.md](VALIDATION.md)) |
 | 4. SIP caller | real calls against a real system | not implemented |
 
 Instrument accuracy, stage 1: **bias −0.40 ms, p95 |error| 2.38 ms** on a clean G.711
-channel with 20 ms frames, t0 annotation exact with zero variance. Stage 2 over real
-sockets, on the reference host documented in [METHOD.md](METHOD.md) §5.1: **bias
-+0.35 ms, sd 0.06 ms** across 15 calls. That run predates the per-machine ledger, so
-its raw JSON is not in the repository. Stage 2 is a property of each machine: the
-stage 2 artifact that *is* committed shows a development laptop being refused by QC
-(0/20 usable calls), which is the designed behaviour for a host that cannot pace a
-frame grid. [VALIDATION.md](VALIDATION.md) holds the per-machine record.
+channel with 20 ms frames, t0 annotation exact with zero variance. Those figures have
+been reproduced to four significant figures on two unrelated machines, which is what a
+host-independent stage should do.
+
+Stage 2 over real sockets, on a qualified host: **bias +0.21 ms, sd 0.02 ms** across
+20 of 20 usable calls. Stage 3 across a real NIC and two hosts recovers a `netem`-injected
+50 ms delay to **+0.08 ms**, with a standard error of 0.03 ms, using a differential gate
+against a no-impairment baseline over the same host pair.
+
+Both figures are properties of a particular machine or pair rather than of the code, which
+is why they carry ledger rows. [VALIDATION.md](VALIDATION.md) holds that record, including
+refusals: one committed stage 2 artifact shows a development laptop being turned away by QC
+with 0 of 20 usable calls, which is the designed behaviour for a host that cannot pace a
+frame grid.
 
 Run [`python -m harness.preflight`](harness/preflight.py) on any new machine first: it
 measures whether that host can pace a frame grid accurately enough to be trusted.

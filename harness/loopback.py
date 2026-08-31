@@ -538,6 +538,22 @@ def run_call(delay_ms: float, codec: str = "pcmu", ptime_ms: float = 20.0,
         return Capture(header=hdr, packets=list(packets)), diag
 
 
+def _status(row: dict) -> str:
+    """One call's QC status, for the console.
+
+    Advisory flags are shown even when the call passes. They do not invalidate a
+    measurement, but they turn it from a point estimate into an upper bound, and the flag
+    has to travel with the number. Printing flags only on failure produced a real
+    incident: a stage 3 sweep reported forty clean-looking calls while thirty-eight of
+    them carried a late-discard advisory that existed in the JSON and nowhere a reader
+    would see it.
+    """
+    flags = row.get("qc_flags") or []
+    if not row.get("qc_ok"):
+        return "QC FAIL " + str(flags)
+    return "ok" if not flags else "ok, advisory " + ",".join(flags)
+
+
 def compare_sweeps(baseline_path: str, netem_path: str, expect_netem_ms: float,
                    tol_ms: float = 5.0) -> int:
     """Stage 3 gate: the difference between two sweeps must equal the injected delay.
@@ -733,7 +749,7 @@ def main() -> int:
                   f"residual {rows[-1]['residual_ms']}  "
                   f"self-err {'n/a' if self_err is None else f'{self_err:+.2f}'}  "
                   f"tx pacing max {rows[-1]['tx_pacing_max_ms']:.2f}  "
-                  f"{'ok' if rows[-1]['qc_ok'] else 'QC FAIL ' + str(rows[-1]['qc_flags'])}")
+                  f"{_status(rows[-1])}")
 
     control_failures = sum(1 for r in rows if r.get("control_failed"))
     usable = [r for r in rows if r["qc_ok"] and r["residual_ms"] is not None]
@@ -754,6 +770,27 @@ def main() -> int:
     if np.isfinite(pac).any():
         print(f"tx pacing worst deviation across all calls: {np.nanmax(pac):.2f} ms "
               f"(QC blocks above 5 ms)")
+
+    # Advisory flags are counted and stated at the end as well as per call, because a
+    # summary that reports only the distribution invites the reader to quote a figure
+    # while leaving behind the caveat that makes it an upper bound.
+    advisory: dict[str, int] = {}
+    for r in rows:
+        if r.get("qc_ok"):
+            for f in r.get("qc_flags") or []:
+                advisory[f] = advisory.get(f, 0) + 1
+    if advisory:
+        print("advisory flags on usable calls: "
+              + ", ".join(f"{k} on {v}/{len(usable)}" for k, v in sorted(advisory.items())))
+        print("  These remain valid measurements of a degraded channel. Where the onset "
+              "frame\n  was itself deferred, the figure is an upper bound rather than a "
+              "point estimate,\n  so the flag belongs with any number quoted from this "
+              "run.")
+        if "high_late_discard" in advisory and advisory["high_late_discard"] > len(usable) / 2:
+            print("  Late discard on most calls means the playout target is too shallow "
+                  "for this\n  channel's jitter. Ingress figures are unaffected; playout "
+                  "figures from this run\n  are upper bounds and a deeper target should be "
+                  "stated before quoting them.")
 
     verdict: list[str] = []
     # Systematic means large AND consistent. Both conditions matter: a 0.3 ms bias with
@@ -786,6 +823,7 @@ def main() -> int:
              "stage": 3 if peer else 2,
              "peer": f"{peer[0]}:{peer[1]}" if peer else None,
              "control_failures": control_failures,
+             "advisory_flags": advisory,
              "rows": rows, "verdict": verdict}, indent=2))
         print(f"wrote {args.json}")
 

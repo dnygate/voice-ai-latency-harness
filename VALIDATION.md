@@ -17,7 +17,7 @@ its own author's, is the quality-control machinery doing its job.
 |---|---|---|---|
 | 1 | `python -m harness.validate` | the metric arithmetic, onset detection and QC gates | no; a failure anywhere means the code is wrong |
 | 2 | `python -m harness.loopback` | one host's live capture path, timestamping and pacing | yes |
-| 3 | not yet built | a host pair across a real NIC with `netem`-injected delay | yes, both hosts |
+| 3 | `--responder` / `--peer`, then `--compare` | a host pair across a real NIC with `netem`-injected delay | yes, both hosts |
 | 4 | not yet built | the full SIP calling rig against a real system | yes |
 
 Stages are cumulative for trusting a real measurement (`METHOD.md` §7 requires stage
@@ -28,8 +28,17 @@ rather than held back until all four exist.
 ## Adding a row
 
 1. `python -m harness.preflight` first; it is quick and predicts the stage 2 outcome.
+   Keep its output as `results/validation/<label>-<date>-preflight.txt`, because it is
+   the cheapest available record of what the host's timing was like on the day and it
+   explains a later refusal without anyone having to re-run anything.
 2. `python -m harness.validate --json results/validation/<label>-<date>-stage1.json`
 3. `python -m harness.loopback --json results/validation/<label>-<date>-stage2.json`
+4. For stage 3, a pair of sweeps and the differential result:
+   `--peer H:P --json <label>-<date>-stage3-baseline.json` with `netem delay 0ms`, the
+   same again as `-stage3-netem.json` with the delay applied, then
+   `--compare` over the two. Record the interface name, the exact `tc` invocation and
+   the `tc qdisc show` output for both sweeps, since the qdisc is part of the conditions
+   in the same way that mains power was for a laptop.
 
 Commit the JSON alongside the row. The date in the filename and the row is the date
 the run executed, which may precede the commit. Record the operating system, Python
@@ -43,6 +52,8 @@ number.
 |---|---|---|
 | `method-reference` | not recorded; predates this ledger | produced the validated accuracy in `METHOD.md` §5 |
 | `mbp-m1pro` | MacBook Pro 18,3, Apple M1 Pro, 10 cores | development machine |
+| `ec2-c7i-caller` | AWS `c7i.large`, 2 vCPU, eu-west-2b, Ubuntu, Python 3.14.4 | stage 3 caller, and the measuring host |
+| `ec2-c7i-responder` | AWS `c7i.large`, 2 vCPU, eu-west-2b, Ubuntu, Python 3.14.4 | stage 3 reference responder, carries `netem` |
 
 ## Results
 
@@ -52,6 +63,13 @@ number.
 | `method-reference` | 2 | 2026-08 | — | — | **passed** | residual bias +0.35 ms, sd 0.06 ms, worst tx pacing 4.91 ms | `METHOD.md` §5.1 |
 | `mbp-m1pro` | 1 | 2026-08-24 | 3.12.13 | macOS 26.5.1, mains | **passed**, all gates | clean-channel headline bias −0.40 ms, sd 0.70 ms, p95 \|e\| 2.38 ms; annotator exact over 1200 calls | [json](results/validation/mbp-m1pro-2026-08-24-stage1.json) |
 | `mbp-m1pro` | 2 | 2026-08-24 | 3.12.13 | macOS 26.5.1, mains, `caffeinate -di`, heavy background media indexing (load 8 to 12) | **refused**: host pacing | 0/20 calls usable, worst tx pacing 48.0 ms | [json](results/validation/mbp-m1pro-2026-08-24-stage2.json) |
+| `ec2-c7i-responder` | 1 | 2026-08-31 | 3.14.4 | c7i.large, eu-west-2b, Ubuntu, Linux 7.0.0-1006-aws, numpy 2.5.2 | **passed**, all gates | reproduces `METHOD.md` §5 to four significant figures: clean-channel headline bias −0.40 ms, sd 0.70 ms, p95 \|e\| 2.38 ms; annotator exact over 1200 calls; mispaced sender rejected on all 80 | [json](results/validation/ec2-c7i-responder-2026-08-31-stage1.json) |
+| `ec2-c7i-responder` | 2 | 2026-08-31 | 3.14.4 | as above | **passed** | 20/20 usable, residual bias +0.21 ms, sd 0.02 ms, p95 \|e\| 0.25 ms, worst tx pacing 0.14 ms, responder self-error +0.00 ms on every call | [json](results/validation/ec2-c7i-responder-2026-08-31-stage2.json) |
+| `ec2-c7i-caller` | 1 | 2026-08-31 | 3.14.4 | c7i.large, eu-west-2b, Ubuntu, Linux 7.0.0-1006-aws, numpy 2.5.2 | **passed**, all gates | identical to the responder's stage 1 figures, as a host-independent stage should be | [json](results/validation/ec2-c7i-caller-2026-08-31-stage1.json) |
+| `ec2-c7i-caller` | 2 | 2026-08-31 | 3.14.4 | as above | **passed** | 20/20 usable, residual bias +0.23 ms, sd 0.04 ms, p95 \|e\| 0.30 ms, worst tx pacing 3.82 ms on one call and 0.15 ms elsewhere | [json](results/validation/ec2-c7i-caller-2026-08-31-stage2.json) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-08-31 | 3.14.4 | pair as above, same AZ, private addressing; `netem delay 50ms 15ms distribution paretonormal` on the responder's `enp39s0` egress only, caller qdisc untouched | **passed** | 50 ms declared, difference **+47.75 ms**, error **−2.25 ms** against a 5 ms tolerance, standard error 1.81 ms; 40/40 usable in both sweeps; advisory `high_late_discard` on 38/40 of the netem sweep, so its playout figures are upper bounds | [baseline](results/validation/ec2-c7i-caller-2026-08-31-stage3-baseline.json), [netem](results/validation/ec2-c7i-caller-2026-08-31-stage3-netem.json) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-08-31 | 3.14.4 | as above but `netem delay 50ms` with no jitter, isolating the instrument from netem's distribution | **passed** | 50 ms declared, difference **+50.08 ms**, error **+0.08 ms**, standard error 0.03 ms, residual sd 0.11 ms; 20/20 usable, no advisory flags | [baseline](results/validation/ec2-c7i-caller-2026-08-31-stage3-baseline.json), [no-jitter](results/validation/ec2-c7i-caller-2026-08-31-stage3-netem-nojitter.json) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-08-31 | 3.14.4 | as above plus `loss 1%`; run to exercise the advisory flags, not to measure accuracy | **advisory exercised** | 20/20 usable, `high_loss` on 3 calls and `high_late_discard` on 19, measured loss mean 1.24% against 1% declared | [json](results/validation/ec2-c7i-caller-2026-08-31-stage3-loss.json) |
 
 ### Notes
 
@@ -59,6 +77,57 @@ number.
 not recorded at the time. Its figures stand as the instrument's reference validation;
 re-running on that machine with `--json` would upgrade these two rows to
 ledger-standard evidence.
+
+**The `ec2-c7i` pair.** Preflight on 2026-08-31 returned a worst pacing deviation of
+0.002 ms on both hosts, on the 20 ms grid and on the 10 ms grid alike, against the 5 ms
+QC threshold. That is roughly four orders of magnitude better than the same measurement
+on `mbp-m1pro`, whose worst was 16.49 ms, and it is the clearest illustration in this
+file of why pacing is recorded per machine rather than assumed from the code. Monotonic
+clock resolution is 1 ns on both. Plain `time.sleep()` also passes on these hosts, unlike
+on macOS, and the harness continues to spin regardless, because the margin costs one core
+and the alternative is trusting a scheduler.
+
+Two properties worth noting for later. The 10 ms grid passing means these hosts can
+support measurement at a 10 ms packetisation time, which no machine in this ledger has
+previously been able to claim. And running on Python 3.14 means the `audioop` cross-check
+is skipped and the frozen golden vectors are the only codec oracle in play, which is
+precisely the situation those vectors were frozen for.
+
+**The `ec2-c7i` pair, stage 3.** The differential recovered the declared 50 ms to within
+2.25 ms. That error sits inside the instrument's own stage 1 precision of 2.38 ms p95, so
+it needs no separate explanation, and this run cannot distinguish residual instrument bias
+from `netem`'s `paretonormal` table carrying a slightly non-zero mean. The measured
+residual sd of 11.43 ms against a nominal 15 ms jitter parameter is weak evidence for the
+second reading, and a no-jitter repeat at the same base delay would separate them.
+
+A no-jitter repeat the same day settled it. With `netem delay 50ms` and no distribution,
+the difference came to **+50.08 ms, an error of +0.08 ms** with a standard error of
+0.03 ms and residual sd 0.11 ms over 20 calls. The −2.25 ms therefore belonged to netem's
+`paretonormal` table rather than to the instrument, and the instrument's accuracy across a
+real NIC and two hosts is better than a tenth of a millisecond, which is tighter than
+stage 2 achieved on loopback.
+
+**The `ec2-c7i` pair, playout under jitter.** The jittered sweep raised
+`high_late_discard` on 38 of its 40 calls with zero packet loss, so its playout figures are
+upper bounds rather than point estimates and the flag has to travel with them. Playout did
+not absorb the jitter except at the shortest delay: per programmed delay the ingress and
+playout standard deviations were 19.03 against 3.06 ms at 137 ms, then 8.08 against 9.49,
+7.37 against 6.58, 9.76 against 10.61, and 9.25 against 7.59. A 40 ms playout target is
+simply too shallow for 15 ms of jitter, so frames arrived after their deadline and onset
+detection was deferred by whole frames, which adds variance rather than removing it. That
+is the behaviour `METHOD.md` §4 specifies, and the ingress-based stage 3 gate is unaffected.
+The loss sweep separately raised `high_loss` on 3 calls with measured loss averaging 1.24%
+against netem's declared 1%, so both advisory mechanisms have now been exercised on real
+data rather than only in simulation.
+
+One instrument defect was found by auditing these files rather than by running them: the
+console printed QC flags only on failure, so a sweep could report forty passing calls while
+38 carried an advisory recorded in the JSON and nowhere a reader would look. Fixed the same
+day, with a regression test.
+
+The reference responder's self-error stayed at +0.00 ms across all 120 remote calls, so the
+frame-quantisation defect recorded in `METHOD.md` §6 remains fixed when the responder is a
+separate process on a separate machine.
 
 **`mbp-m1pro` stage 2.** Five attempts across 21 to 24 August 2026 all ended in
 refusal, with usable calls ranging from 0/20 (during background media indexing) to

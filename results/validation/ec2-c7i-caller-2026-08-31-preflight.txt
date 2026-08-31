@@ -1,0 +1,36 @@
+Captured 2026-08-31. Caller host for stage 3, and therefore the host whose pacing
+determines whether a stage 3 figure can be trusted at all.
+Instance: c7i.large, eu-west-2b, Ubuntu. Private address 172.31.46.135.
+No qdisc was applied to this host at any point: netem was confined to the responder,
+so that the send path of the host under validation stayed unperturbed.
+
+Test suite on this host: 32 passed, 1 skipped. The skip is the audioop cross-check,
+which is absent from Python 3.13 onward, so the live-socket test passed here rather
+than being skipped for unfit pacing.
+
+==========================================================================
+voice-ai-latency-harness preflight
+==========================================================================
+  platform     Linux-7.0.0-1006-aws-x86_64-with-glibc2.43
+  machine      x86_64
+  python       3.14.4 (/home/ubuntu/voice-ai-latency-harness/.venv/bin/python)
+  numpy        2.5.2
+  scipy        absent  (optional; prompts must then already be 8 kHz mono)
+  monotonic clock resolution  1 ns
+  G.711 golden vectors        present  (replaces stdlib audioop, removed in Python 3.13)
+
+pacing capability -- can this host hold a frame grid?
+  plain time.sleep() is shown to make the case for the spin; the harness
+  always uses hybrid sleep-then-spin.
+
+  20 ms grid, 150 frames:
+  plain sleep                  p50  0.037  p99  0.162  max   0.181 ms   PASS
+  hybrid sleep+spin            p50  0.000  p99  0.001  max   0.002 ms   PASS
+
+  10 ms grid, 300 frames:
+  plain sleep                  p50  0.026  p99  0.188  max   0.242 ms   PASS
+  hybrid sleep+spin            p50  0.000  p99  0.000  max   0.002 ms   PASS
+
+verdict
+  This host can pace a 20 ms grid within 0.00 ms. Stage 2 and
+  live measurement are both viable here.

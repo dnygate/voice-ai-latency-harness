@@ -179,7 +179,7 @@ by QC is the gate working as designed, and preflight predicts that outcome befor
 call is placed, which is the answer to whether stage 2 timing on such a host is
 representative: an unfit host is detected and excluded rather than averaged in.
 
-## 6. Five findings that changed the method
+## 6. Six findings that changed the method
 
 Recorded because each is a mistake a reader may be making.
 
@@ -220,6 +220,17 @@ playout model. Jitter is now one-sided gamma (shape 2). Sender pacing slop stays
 symmetric, because a timer-driven sender genuinely can fire early or late — a different
 physical mechanism, correctly modelled differently.
 
+**An advisory flag nobody can see is not an advisory.** The stage 3 console printed QC
+flags only when a call failed, so a jittered sweep in which 38 of 40 calls raised
+`high_late_discard` reported forty passing calls and no caveat at all. Every number in
+that run was correct. What was missing was the qualification that §4 attaches to them,
+namely that a call whose onset frame was deferred yields an upper bound rather than a
+point estimate, and a reader working from the console rather than from the committed JSON
+would have quoted those playout figures as though they were point estimates. This was
+caught by auditing the artifact rather than by running anything, which is the argument for
+storing flags in the capture and for publishing the JSON alongside every claim. Flags now
+appear on passing calls and are summarised with counts at the end of a run.
+
 ## 7. Validation stages
 
 1. **In-process.** Proves the metric arithmetic, onset detection, and QC gates. No
@@ -228,7 +239,12 @@ physical mechanism, correctly modelled differently.
    timestamping. Implemented and passing; found two errors stage 1 structurally could
    not (§6).
 3. **Remote host, `netem`-injected delay.** Proves end to end against a known injected
-   delay across a real NIC, and across two clocks. Not yet implemented.
+   delay across a real NIC, and across two clocks. Implemented and passing. The gate is
+   differential against a no-impairment baseline over the same host pair, which cancels
+   the inter-host round trip and the responder's own emission error, so no independent
+   measurement of the path is required. First passed 2026-08-31: a declared 50 ms
+   recovered to within 2.25 ms, inside the instrument's own precision. See
+   `VALIDATION.md`.
 4. **SIP caller.** Real calls against a real system. Not yet implemented.
 
 Stage 3 must pass before any figure is measured from a real system. The instrument's
