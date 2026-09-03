@@ -302,6 +302,41 @@ def test_packet_loss_does_not_manufacture_filler():
     assert "discontiguous_response" not in res.qc.flags
 
 
+# --------------------------------------- captures kept, playout re-analysable (2026-09-03)
+
+def test_saved_capture_round_trips_and_reanalyses_identically(tmp_path):
+    """Stage 2 and 3 sweeps kept only derived rows and discarded the audio, so the netem
+    sweep could never be asked what playout would have been at a deeper target. A saved
+    capture has to read back and analyse to the same figures, or it is not evidence."""
+    from harness.loopback import _save_capture
+
+    prompt, _, ann = annotated_prompt(seed=3)
+    cap = reference_capture(353.0, prompt=prompt, speech_end_sample=ann.speech_end_sample,
+                            seed=3, call_id="lb-353-0")
+    before = analyse_capture(cap)
+    path, digest = _save_capture(cap, str(tmp_path))
+    assert Path(path).name == "lb-353-0.jsonl.gz"
+    assert digest == hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    after = analyse_capture(read_capture(path))
+    assert after.mrl_ms == before.mrl_ms
+    assert (after.variants["headline"].mrl_playout_ms
+            == before.variants["headline"].mrl_playout_ms)
+    assert after.qc.flags == before.qc.flags
+
+
+def test_playout_target_is_a_parameter_of_analysis_not_of_capture():
+    """On a clean channel playout MRL is ingress MRL plus the buffer target, so asking one
+    capture two different questions must move the answer by exactly the difference and
+    leave ingress alone. This is the property that makes keeping captures worth anything."""
+    prompt, _, ann = annotated_prompt(seed=5)
+    cap = reference_capture(457.0, prompt=prompt, speech_end_sample=ann.speech_end_sample,
+                            seed=5)
+    at40 = analyse_capture(cap, playout_target_ms=40.0).variants["headline"]
+    at100 = analyse_capture(cap, playout_target_ms=100.0).variants["headline"]
+    assert at40.mrl_ms == at100.mrl_ms
+    assert abs((at100.mrl_playout_ms - at40.mrl_playout_ms) - 60.0) < 0.5
+
+
 # ------------------------------------------------------------ stage 3, two hosts
 
 def _sweep(path: Path, residuals: list[float], self_err: float = 0.01) -> Path:

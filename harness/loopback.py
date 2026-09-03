@@ -14,6 +14,10 @@ responder's egress:
       python -m harness.loopback --peer 10.0.1.5:9000 --json netem.json
       python -m harness.loopback --compare baseline.json netem.json --expect-netem-ms 50
 
+Add --save-captures DIR to any sweep to keep the raw captures alongside the derived
+rows, so that a later question (what would playout have been at a deeper target?) is
+answered by re-running the analyser locally rather than by restarting two hosts.
+
 The stage 3 gate is differential and that is the point of it. netem on the responder's
 egress delays only the return leg, so the measured residual is the inter-host round trip
 plus the injected delay, and subtracting the baseline residual cancels the round trip
@@ -44,6 +48,7 @@ harness must not be the largest source of error in its own measurement.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import socket
@@ -57,7 +62,7 @@ import numpy as np
 
 from . import g711
 from .analyse import analyse_capture
-from .record import Capture, CaptureHeader, Packet
+from .record import Capture, CaptureHeader, Packet, write_capture
 from .synth import annotated_prompt, speechlike
 
 SPIN_MARGIN_NS = 1_500_000  # start spinning 1.5 ms before the deadline
@@ -538,6 +543,21 @@ def run_call(delay_ms: float, codec: str = "pcmu", ptime_ms: float = 20.0,
         return Capture(header=hdr, packets=list(packets)), diag
 
 
+def _save_capture(cap: Capture, directory: str) -> tuple[str, str]:
+    """Write the raw capture and return (path, sha256 of the file).
+
+    Until 2026-09-03 the stage 2 and 3 sweeps kept only derived rows and discarded the
+    audio, which broke the project's first rule for precisely the runs that cost money to
+    repeat: the netem sweep could not be asked what playout MRL would have been at a
+    deeper buffer target because the samples were gone. With the capture kept, that is a
+    local command. The hash is recorded in the row so the JSON vouches for the file it
+    points at.
+    """
+    path = Path(directory) / f"{cap.header.call_id}.jsonl.gz"
+    write_capture(path, cap)
+    return str(path), hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _status(row: dict) -> str:
     """One call's QC status, for the console.
 
@@ -589,7 +609,15 @@ def compare_sweeps(baseline_path: str, netem_path: str, expect_netem_ms: float,
     print(f"           {b_resid.size}/{b_total} usable, host {b_doc.get('host')}")
     print(f"netem    : {netem_path}")
     print(f"           {n_resid.size}/{n_total} usable, host {n_doc.get('host')}")
-    print(f"declared injected delay: {expect_netem_ms:g} ms\n")
+    print(f"declared injected delay: {expect_netem_ms:g} ms")
+    b_pt, n_pt = b_doc.get("playout_target_ms"), n_doc.get("playout_target_ms")
+    if b_pt is not None and n_pt is not None and b_pt != n_pt:
+        # The gate is on ingress, which the buffer target cannot touch, so this is a
+        # note rather than a failure. It is still a difference in conditions and a
+        # reader of the two files deserves to be told.
+        print(f"note: playout targets differ ({b_pt:g} vs {n_pt:g} ms); ingress gate "
+              f"is unaffected, playout figures are not comparable across the two")
+    print()
 
     if b_resid.size < 3 or n_resid.size < 3:
         print("STAGE 3 NOT PASSED: fewer than three usable calls in one of the sweeps, so")
@@ -668,6 +696,13 @@ def main() -> int:
     ap.add_argument("--codec", default="pcmu")
     ap.add_argument("--ptime", type=float, default=20.0)
     ap.add_argument("--json")
+    ap.add_argument("--playout-target-ms", type=float, default=40.0,
+                    help="de-jitter buffer target for playout MRL. A parameter of the "
+                         "analysis, not of the capture: the same saved capture can be "
+                         "re-analysed under another value.")
+    ap.add_argument("--save-captures", metavar="DIR",
+                    help="keep every raw capture in DIR as <call_id>.jsonl.gz, hashed "
+                         "into the JSON rows")
     ap.add_argument("--gate-ms", type=float, default=6.0,
                     help="max acceptable |residual bias| on this host")
     ap.add_argument("--responder", action="store_true",
@@ -705,7 +740,8 @@ def main() -> int:
     if peer:
         print(f"peer: {peer[0]}:{peer[1]}")
     print(f"stage {'3 (remote peer)' if peer else '2 (loopback)'}: {len(delays)} delays "
-          f"x {args.calls} calls, {args.codec} @ {args.ptime:g} ms\n")
+          f"x {args.calls} calls, {args.codec} @ {args.ptime:g} ms, "
+          f"playout target {args.playout_target_ms:g} ms\n")
 
     rows = []
     for d in delays:
@@ -724,8 +760,9 @@ def main() -> int:
                              "qc_ok": False, "qc_flags": ["control_plane"]})
                 print(f"  delay {d:>6.0f} ms  call {c}  CONTROL FAILURE: {exc}")
                 continue
-            res = analyse_capture(cap)
+            res = analyse_capture(cap, playout_target_ms=args.playout_target_ms)
             v = res.variants["headline"]
+            saved = _save_capture(cap, args.save_captures) if args.save_captures else None
             self_err = (None if not np.isfinite(diag.self_error_ms)
                         else round(diag.self_error_ms, 3))
             rows.append({
@@ -740,6 +777,9 @@ def main() -> int:
                 "tx_pacing_p99_ms": round(res.qc.tx_pacing_p99_ms, 3),
                 "tx_pacing_max_ms": round(res.qc.tx_pacing_max_dev_ms, 3),
                 "rx_loss_pct": round(res.qc.rx_loss_pct, 3),
+                "playout_target_ms": res.qc.playout_target_ms,
+                "capture_path": saved[0] if saved else None,
+                "capture_sha256": saved[1] if saved else None,
                 "qc_ok": res.qc.ok(), "qc_flags": res.qc.flags,
                 "tx_packets": res.qc.tx_packets, "rx_packets": res.qc.rx_packets,
             })
@@ -821,6 +861,8 @@ def main() -> int:
         Path(args.json).write_text(json.dumps(
             {"host": platform.platform(), "python": platform.python_version(),
              "stage": 3 if peer else 2,
+             "playout_target_ms": args.playout_target_ms,
+             "captures_dir": args.save_captures,
              "peer": f"{peer[0]}:{peer[1]}" if peer else None,
              "control_failures": control_failures,
              "advisory_flags": advisory,
