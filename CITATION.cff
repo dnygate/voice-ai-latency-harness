@@ -16,8 +16,8 @@ identifiers:
       value: 10.5281/zenodo.22124823
       description: Concept DOI, resolves to the latest release; per-version DOIs are on the Zenodo record
 license: Apache-2.0
-version: 0.1.1
-date-released: 2026-08-27
+version: 0.1.2
+date-released: 2026-09-04
 keywords:
     - voice AI
     - conversational latency

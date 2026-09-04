@@ -28,6 +28,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Iterator
 
+from . import __version__
+
 SCHEMA_VERSION = "vlh-capture/1"
 
 
@@ -47,7 +49,7 @@ class CaptureHeader:
     codec: str = "pcmu"
     ptime_ms: float = 20.0
     sample_rate: int = 8000
-    harness_version: str = "0.1.0"
+    harness_version: str = __version__
     sut_label: str = ""          # free-text SUT identity, e.g. "parakeet-v2+qwen3-8b+chatterbox"
     sut_config_sha256: str = ""  # hash of the SUT config bundle, for reproducibility
     concurrency: int = 1         # number of concurrent calls in the run this call belonged to

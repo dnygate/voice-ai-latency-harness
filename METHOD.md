@@ -230,15 +230,19 @@ Behaviours confirmed rather than merely tolerated:
 
 ### 5.1 Stage 2: live sockets
 
-Real UDP on loopback, identical analyser. 15 calls, delays 137/213/353/457/806 ms.
+Real UDP on loopback, identical analyser. 20 calls, delays 137/213/353/457/806 ms, on each
+host of the `ec2-c7i` pair (2026-08-31, committed evidence in `VALIDATION.md`).
 
 | quantity | value |
 |---|---|
-| residual bias | **+0.35 ms** |
-| residual sd | 0.06 ms |
-| p95 \|error\| | 0.42 ms |
-| reference responder self-error | < 0.01 ms |
-| worst transmit pacing deviation | 4.91 ms (QC blocks above 5 ms) |
+| residual bias | **+0.21 to +0.23 ms** |
+| residual sd | 0.02 to 0.04 ms |
+| p95 \|error\| | 0.25 to 0.30 ms |
+| reference responder self-error | +0.00 ms on every call |
+| worst transmit pacing deviation | 0.14 ms, one excursion to 3.82 ms (QC blocks above 5 ms) |
+
+An earlier reference host whose hardware was not recorded gave +0.35 ms bias with sd 0.06
+over 15 calls; it stands in the ledger as dated evidence and the pair above supersedes it.
 
 Pacing is a property of the host, not the code. `harness.preflight` measures it in ten
 seconds and should be run on any machine before a figure from that machine is trusted.
@@ -372,9 +376,10 @@ appear on passing calls and are summarised with counts at the end of a run.
    delay across a real NIC, and across two clocks. Implemented and passing. The gate is
    differential against a no-impairment baseline over the same host pair, which cancels
    the inter-host round trip and the responder's own emission error, so no independent
-   measurement of the path is required. First passed 2026-08-31: a declared 50 ms
-   recovered to within 2.25 ms, inside the instrument's own precision. See
-   `VALIDATION.md`.
+   measurement of the path is required. Passed 2026-08-31 and closed 2026-09-04: a declared
+   50 ms recovered to +0.08 ms and 137 ms to within 0.05 ms across a real NIC and two
+   hosts, with the playout buffer's absorption of jitter reproduced over the real path.
+   Every figure re-derives from committed captures. See `VALIDATION.md`.
 4. **SIP caller.** Real calls against a real system. Not yet implemented.
 
 Stage 3 must pass before any figure is measured from a real system. The instrument's
