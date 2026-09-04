@@ -33,12 +33,28 @@ rather than held back until all four exist.
    explains a later refusal without anyone having to re-run anything.
 2. `python -m harness.validate --json results/validation/<label>-<date>-stage1.json`
 3. `python -m harness.loopback --json results/validation/<label>-<date>-stage2.json`
-4. For stage 3, a pair of sweeps and the differential result:
+4. For stage 3, a pair of sweeps over the same host pair and the differential result:
    `--peer H:P --json <label>-<date>-stage3-baseline.json` with `netem delay 0ms`, the
-   same again as `-stage3-netem.json` with the delay applied, then
-   `--compare` over the two. Record the interface name, the exact `tc` invocation and
-   the `tc qdisc show` output for both sweeps, since the qdisc is part of the conditions
-   in the same way that mains power was for a laptop.
+   same again as `-stage3-netem.json` with the delay applied, then `--compare` over the
+   two. Record the interface name, the exact `tc` invocation and the `tc qdisc show`
+   output for both sweeps, since the qdisc is part of the conditions in the same way that
+   mains power was for a laptop.
+
+   Five things learned qualifying the first pair, each of which cost a sweep or would
+   have. Use fixed-performance instances and never burstable ones, because CPU credits
+   are the cloud equivalent of laptop power management. Put `netem` on one host only:
+   applying it to both counts the delay on each leg, and `compare_sweeps` reports that as
+   a doubling. Run `netem` in *both* sweeps, at `delay 0ms` for the baseline, so the
+   queuing discipline is identical and only the delay differs. Allow all UDP between the
+   hosts rather than the control port alone, since media sockets bind ephemerally and a
+   port-9000-only rule completes the handshake and then receives no audio. And size the
+   sweeps for the jitter: at 15 ms of jitter, 25 calls leaves the standard error wider
+   than the 5 ms gate and `compare_sweeps` correctly refuses to pass an underpowered run,
+   where 40 calls does not.
+
+   Always pass `--save-captures`. Two of the nine findings in `METHOD.md` §6 were found
+   only by re-analysing kept captures, and every figure in the stage 3 rows below was
+   re-derived from them without restarting a host.
 
 Commit the JSON alongside the row. The date in the filename and the row is the date
 the run executed, which may precede the commit. Record the operating system, Python
