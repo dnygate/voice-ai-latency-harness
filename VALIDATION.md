@@ -74,6 +74,9 @@ number.
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-03 | 3.14.4 | `netem delay 137ms`, no jitter, a second injected value off the frame grid | **passed** | 137 ms declared, difference **+137.01 ms**, error **+0.01 ms**, standard error 0.02 ms; 20/20 usable. `high_late_discard` on 20/20 is a responder artefact, see notes | [json](results/validation/ec2-c7i-caller-2026-09-03-stage3-netem137.json), [captures](results/captures/ec2-c7i-2026-09-03/stage3-netem137/) |
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-03 | 3.14.4 | `netem delay 50ms 15ms distribution paretonormal`, captures kept for re-analysis at any playout target | **collected** | 40/40 usable; late-discard rate 3.2% at a 40 ms target, 1.1% at 60, zero from 80 ms. Playout spread does not fall with target, for the responder reason in the notes | [json](results/validation/ec2-c7i-caller-2026-09-03-stage3-netem50j15.json), [captures](results/captures/ec2-c7i-2026-09-03/stage3-netem50j15/) |
 | `ec2-c7i-caller` | 2 | 2026-09-03 | 3.14.4 | `--ptime 10`, 10 ms packetisation | **passed** | 20/20 usable, residual +0.23 ms, sd 0.05 ms, worst tx pacing 0.14 ms; first ledger row at 10 ms | [json](results/validation/ec2-c7i-caller-2026-09-03-stage2-ptime10.json), [captures](results/captures/ec2-c7i-2026-09-03/stage2-ptime10/) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-04 | 3.14.4 | corrected responder (`ef39ddf`), `netem delay 0ms`, captures kept | **passed** (baseline) | 40/40 usable; as analysed residual −0.74 ms, sd 1.63, which the notes trace to the t1 onset refinement rather than the path; re-deriving t1 from response-packet arrival gives +0.60 ms, sd 0.02, matching both earlier baselines | [json](results/validation/ec2-c7i-caller-2026-09-04-stage3-baseline.json), [captures](results/captures/ec2-c7i-2026-09-04/stage3-baseline/) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-04 | 3.14.4 | corrected responder, `netem delay 137ms`, no jitter | **passed** | 137 declared, difference **+137.38 ms**, error **+0.38 ms**, SE 0.31; 20/20 usable; **no advisory flags**, against `high_late_discard` on 20/20 with the old responder; comfort-noise gap 50.0 to 20.9 ms and transit phase −87 to −0.09 ms on the same call | [json](results/validation/ec2-c7i-caller-2026-09-04-stage3-netem137.json), [captures](results/captures/ec2-c7i-2026-09-04/stage3-netem137/) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-04 | 3.14.4 | corrected responder, `netem delay 50ms 15ms distribution paretonormal`, captures kept | **collected, stage 3 closed** | 40/40 usable; re-analysed at every target from 40 to 150 ms: ingress residual sd 11.60, **playout residual sd 2.68** (old responder 9.54), late discard 4.4% at 40 ms, 1.4% at 60, zero from 80. The buffer absorbs jitter over a real path as stage 1 predicted at 3.05 | [json](results/validation/ec2-c7i-caller-2026-09-04-stage3-netem50j15.json), [captures](results/captures/ec2-c7i-2026-09-04/stage3-netem50j15/) |
 
 ### Notes
 
@@ -166,6 +169,35 @@ receive activity, and to derive RTP timestamps from elapsed media time rather th
 frame count. Both landed in `loopback.py` on 2026-09-04 with regression tests that
 reproduce each signature on loopback; the jittered sweep over the pair is still to be
 repeated, and until it is the playout rows above stand as recorded.
+
+**The `ec2-c7i` pair, 2026-09-04: stage 3 closed, and a ninth finding.** The corrected
+responder was run over the same pair. Both defects are gone on the real path: the 137 ms
+sweep raised no advisory at all where the old responder raised late discard on every call,
+the comfort-noise gap during the handshake fell from 50.0 to 20.9 ms, the comfort-noise-to-
+response transit phase on the same call went from −87 to −0.09 ms, and under jitter the
+playout residual spread fell from 9.54 to 2.68 ms while ingress stayed near 11.6. That last
+figure is the demonstration the jittered rows above could not provide, and it lands within
+a millisecond of the 3.05 ms stage 1 predicted from simulation. Stage 3 is closed.
+
+The same run exposed a defect in the analyser that the old responder had been hiding. The
+baseline residual came out at −0.74 ms with sd 1.63, against +0.60 and sd 0.04 on both
+earlier baselines, with responder self-error at zero. Per call, every 213 ms call has its
+onset at the response packet's first sample and a residual of +0.60; seven of eight 137 ms
+calls have the onset 55 to 113 samples inside the final comfort-noise frame and a residual
+2 to 4 ms low. Re-deriving t1 from the response packet's arrival gives +0.60 ms, sd 0.02,
+across all forty. The cause is that `_detect_onset` refines t1 within its first
+above-threshold 5 ms window using instantaneous sample amplitude, the mechanism finding
+two removed from t0 and which was never applied to t1. Frame-count stamping had placed
+every response on the 5 ms analysis grid, so no noise ever preceded an onset inside its
+window; a media clock places the response where it truly began, which for the 137 ms
+group was 14 to 20 ms into the final comfort-noise frame, so the first window to clear the
+threshold was mostly noise and a noise peak fired the refinement up to a frame early. The
+effect is present in stage 1 too, where the current refinement's bias runs from −0.03 ms on
+the strict variant to −2.26 on the sensitive, the threshold dependence that noise-chasing
+produces, and it contributes to the published −0.40 ms headline bias and the 0.99 ms
+variant spread on a hard onset, which on a hard onset should be near zero. The remedy is
+the one finding two applied to t0, a short sliding RMS, and once it lands every capture
+kept here can be re-derived without an instance. Pending as of 2026-09-04.
 
 **`mbp-m1pro` stage 2.** Five attempts across 21 to 24 August 2026 all ended in
 refusal, with usable calls ranging from 0/20 (during background media indexing) to
