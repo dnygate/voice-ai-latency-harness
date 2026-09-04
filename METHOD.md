@@ -242,7 +242,7 @@ by QC is the gate working as designed, and preflight predicts that outcome befor
 call is placed, which is the answer to whether stage 2 timing on such a host is
 representative: an unfit host is detected and excluded rather than averaged in.
 
-## 6. Seven findings that changed the method
+## 6. Eight findings that changed the method
 
 Recorded because each is a mistake a reader may be making.
 
@@ -296,6 +296,24 @@ it. Detection and floor estimation now both begin at `greeting_end_sample`, reco
 capture. This one could not have been caught by any test that existed, because the
 synthetic generator had no greeting to produce; it was found by asking what a real call
 looks like, and confirmed by teaching the generator to make one.
+
+**A reference responder has to be an honest RTP sender.** Two defects in the calibration
+source, neither in the instrument, both found by re-analysing kept captures rather than by
+any test. The responder paced its comfort noise off a 50 ms receive timeout, so while no
+caller media was arriving it emitted one frame per 50 ms and slipped 30 ms each; the
+handshake window before media arrives is such a period and it grows with injected delay,
+so the slip was 17.6 ms at baseline and 44.7 ms under 137 ms of netem, and because the
+first frame anchored the playout minimum every later frame read as late, raising
+`high_late_discard` on 20 of 20 calls that carried no jitter whatever. Separately, response
+frames were stamped with the next comfort-noise grid slot while being emitted at t0 + delay,
+a phase error of up to one frame that varied call to call once handshake timing was
+jittered. Ingress never saw it, being derived from arrival, and playout inherited it
+entirely: 9.54 ms of spread at every buffer target from 40 to 150 ms, where stage 1 had
+predicted a collapse. Comfort noise is now paced on its own deadline, and every RTP
+timestamp is derived from scheduled emission time on a media clock, as a real sender's
+sample clock would produce. Both were invisible to stage 1, whose synthetic stream is
+constructed correctly by definition, and to stage 2 on loopback, where the handshake window
+is too short to slip. They needed a real path and captures that were kept.
 
 **An advisory flag nobody can see is not an advisory.** The stage 3 console printed QC
 flags only when a call failed, so a jittered sweep in which 38 of 40 calls raised

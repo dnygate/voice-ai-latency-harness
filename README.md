@@ -18,7 +18,7 @@ only as trustworthy as the row of the machine that produced it.
 ## Quick start
 
     pip install numpy scipy pytest
-    python -m pytest tests -q          # 42 tests, ~7 s
+    python -m pytest tests -q          # 44 tests, ~8 s
     python -m harness.validate        # instrument accuracy sweep, ~40 s
 
 `validate` replies to each prompt at a known delay and reports how accurately that

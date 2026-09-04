@@ -302,6 +302,63 @@ def test_packet_loss_does_not_manufacture_filler():
     assert "discontiguous_response" not in res.qc.flags
 
 
+# ---------------------------------------- reference responder as an honest RTP sender
+
+def test_responder_paces_comfort_noise_without_caller_traffic():
+    """METHOD.md §6. The responder paced comfort noise off a 50 ms receive timeout, so with
+    no caller media arriving it emitted one frame per 50 ms and slipped 30 ms each. The
+    handshake window before media arrives is such a period and grows with injected delay,
+    so 137 ms of netem gave a 44.7 ms slip and spurious late-discard flags on every call.
+    Comfort noise has to hold its grid whether or not anyone is talking to it."""
+    import socket
+    import time
+    from harness.loopback import ReferenceResponder, now_ns
+
+    sink = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); sink.bind(("127.0.0.1", 0))
+    src = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); src.bind(("127.0.0.1", 0))
+    r = ReferenceResponder(src, sink.getsockname(), 500.0, 10_000,
+                           speechlike(0.5, seed=1), "pcmu", 20.0)
+    r.start()
+    sink.settimeout(0.2)
+    arrivals = []
+    until = time.monotonic() + 0.7
+    while time.monotonic() < until:
+        try:
+            sink.recvfrom(4096)
+            arrivals.append(now_ns())
+        except socket.timeout:
+            pass
+    r.stop_flag.set(); r.join(timeout=1.0); src.close(); sink.close()
+    gaps = np.diff(np.array(arrivals, dtype=np.float64)) / 1e6
+    # The old code managed about 14 frames in 700 ms with gaps pinned at 50 ms.
+    assert len(arrivals) >= 25, len(arrivals)
+    assert 15.0 < float(np.median(gaps)) < 25.0, float(np.median(gaps))
+    assert float(gaps.max()) < 48.0, float(gaps.max())
+
+
+def test_responder_rtp_timestamps_follow_its_media_clock():
+    """METHOD.md §6. Response frames were stamped with the next comfort-noise grid slot
+    while being emitted at t0 + delay, a phase error of up to one frame that reached
+    playout MRL through the timestamp and never reached ingress. Transit computed from
+    timestamp must therefore be the same for comfort noise and for the response."""
+    from harness.analyse import _stream
+    from harness.loopback import run_call
+
+    # A seed whose speech end sits deep inside a frame, so the old stamping would have
+    # been wrong by a distance this test can see.
+    seed = next(s for s in range(50)
+                if ((annotated_prompt(seed=s)[2].speech_end_sample - 1) % 160) / 8.0 > 8.0)
+    cap, _ = run_call(353.0, seed=seed)
+    rx = sorted(cap.rx(), key=lambda p: p.rtp_ts)
+    if len(rx) < 60:
+        pytest.skip("too few received frames to compare comfort noise with response")
+    _, _, base, _ = _stream(rx, cap.header.codec, cap.header.samples_per_frame)
+    transit = np.array([p.t_mono_ns - (p.rtp_ts - base) * 1e9 / cap.header.sample_rate
+                        for p in rx]) / 1e6
+    cn, resp = np.median(transit[:20]), np.median(transit[-20:])
+    assert abs(resp - cn) < 4.0, (cn, resp)
+
+
 # --------------------------------------- captures kept, playout re-analysable (2026-09-03)
 
 def test_saved_capture_round_trips_and_reanalyses_identically(tmp_path):

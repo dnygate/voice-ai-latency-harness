@@ -122,6 +122,7 @@ class ResponderDiag:
     frames_received: int = 0
     frames_sent: int = 0
     pacing: PacingReport = field(default_factory=PacingReport)
+    cn_pacing: PacingReport = field(default_factory=PacingReport)
 
     @property
     def self_error_ms(self) -> float:
@@ -149,6 +150,9 @@ class ResponderDiag:
         pacing_max = d.get("pacing_max_ms")
         if pacing_max is not None:
             diag.pacing = PacingReport(max_ms=float(pacing_max))
+        cn_max = d.get("cn_pacing_max_ms")
+        if cn_max is not None:
+            diag.cn_pacing = PacingReport(max_ms=float(cn_max))
         return diag
 
 
@@ -177,28 +181,75 @@ class ReferenceResponder(threading.Thread):
     def run(self) -> None:
         from .synth import noise_at
 
-        self.sock.settimeout(0.05)
         seq = 0
         ssrc = 0x2222_2222
         pt = g711.payload_type(self.codec)
+        sr = g711.SAMPLE_RATE
+        frame_ns = int(self.ptime_ms * 1e6)
         # Comfort noise from the moment the call is up, so the analyser has a noise
         # floor to estimate against. A stream that is digitally silent until the
         # response begins would make onset detection trivially easy and unrealistic.
         cn = noise_at(self.ptime_ms / 1000.0, self.floor_dbov, seed=self.seed + 3)
         cn_payload = g711.encode(cn[: self.spf], self.codec)
 
-        next_cn = now_ns()
+        # The media clock. Every RTP timestamp is derived from the frame's scheduled
+        # emission instant against this origin, never from a count of frames sent. A
+        # count assumes each frame sat on the grid, and the response does not: it is
+        # emitted at exactly t0 + delay, which lands wherever within a frame the
+        # caller's speech happened to end. Stamping it with the next grid slot instead
+        # gave it a phase error of up to one frame, and once handshake timing was
+        # jittered that error varied call to call. Ingress MRL never saw it, being
+        # derived from arrival; playout MRL is derived through the timestamp and
+        # inherited it wholesale, 9.54 ms of spread at every buffer target in the
+        # 2026-09-03 captures. Real senders stamp from their sample clock. So does this.
+        origin = now_ns()
+        next_cn = origin
+
+        def rtp_ts_at(scheduled_ns: int) -> int:
+            return int(round((scheduled_ns - origin) * sr / 1e9))
+
         emit_at: int | None = None
         sends: list[int] = []
+        cn_sends: list[int] = []
+        last_rx: int | None = None
 
         while not self.stop_flag.is_set():
-            try:
-                data, _ = self.sock.recvfrom(4096)
+            # Comfort noise is paced on its own deadline first, and only then does the
+            # loop block for caller media, and only for as long as the next frame allows.
+            # The earlier shape blocked on a fixed 50 ms receive timeout and sent comfort
+            # noise as a side effect of returning from it, so with no caller packets
+            # arriving it could emit at most one frame per 50 ms and slipped 30 ms per
+            # frame. The handshake window before caller media arrives is exactly such a
+            # period, and it grows with injected delay: the slip was 17.6 ms at baseline
+            # and 44.7 ms under 137 ms of netem. The first frame, sent before any slip,
+            # anchored the playout minimum and every later frame then read as late,
+            # raising high_late_discard on 20 of 20 calls that had no jitter at all.
+            t = now_ns()
+            if emit_at is None and t >= next_cn:
+                cn_sends.append(t)
+                self.sock.sendto(pack_rtp(pt, seq, rtp_ts_at(next_cn), ssrc, seq == 0,
+                                          cn_payload), self.peer)
+                seq += 1
+                self.diag.frames_sent += 1
+                next_cn += frame_ns
+                continue
+
+            if emit_at is None:
+                self.sock.settimeout(max(0.0002, (next_cn - t) / 1e9))
+                try:
+                    data, _ = self.sock.recvfrom(4096)
+                except socket.timeout:
+                    # A caller that spoke and then fell silent for a full second has
+                    # gone away without triggering; do not hold the port forever.
+                    if last_rx is not None and now_ns() - last_rx > 1_000_000_000:
+                        break
+                    continue
                 t_arr = now_ns()
+                last_rx = t_arr
                 _, _, ts, _, _, payload = unpack_rtp(data)
                 self.diag.frames_received += 1
                 n = len(payload) // g711.bytes_per_sample(self.codec)
-                if emit_at is None and ts + n > self.speech_end - 1:
+                if ts + n > self.speech_end - 1:
                     # The arriving frame contains the final speech sample. Compensate for
                     # its offset within the frame so the emission instant is exactly
                     # t0 + delay, where t0 is the transmission time of that sample.
@@ -209,55 +260,53 @@ class ReferenceResponder(threading.Thread):
                     # t_arr + delay + within. Getting this sign wrong produces a residual
                     # of -2*within, i.e. up to -40 ms at 20 ms frames -- exactly the kind
                     # of systematic error a synthetic capture cannot catch.
-                    emit_at = t_arr + int(self.delay_ms * 1e6) + int(within * 1e9 / g711.SAMPLE_RATE)
+                    emit_at = t_arr + int(self.delay_ms * 1e6) + int(within * 1e9 / sr)
                     self.diag.triggered = True
                     self.diag.intended_emit_ns = emit_at
-            except socket.timeout:
-                if emit_at is None and self.diag.frames_received:
-                    break
+                continue
 
-            if emit_at is not None:
-                # Dedicated emit path. Crucially this does NOT stay inside the receive
-                # loop: checking the emit deadline once per received frame quantises
-                # emission to the frame period, adding a uniform 0-20 ms error. That
-                # error is invisible if every test delay is a multiple of the frame time,
-                # because the deadline then lands on a frame boundary. Nothing further
-                # needs to be received after the trigger, so the loop is left behind.
-                frame_ns = int(self.ptime_ms * 1e6)
-                while now_ns() < emit_at - frame_ns:
-                    sleep_until(min(next_cn, emit_at - frame_ns))
-                    if now_ns() >= emit_at - frame_ns:
-                        break
-                    self.sock.sendto(pack_rtp(pt, seq, seq * self.spf, ssrc, seq == 0,
-                                              cn_payload), self.peer)
-                    seq += 1
-                    self.diag.frames_sent += 1
-                    next_cn += frame_ns
-                sleep_until(emit_at)
-                self.diag.actual_emit_ns = now_ns()
-                deadline = self.diag.actual_emit_ns
-                for i in range(0, len(self.response), self.spf):
-                    fr = self.response[i : i + self.spf]
-                    if len(fr) < self.spf:
-                        fr = np.pad(fr, (0, self.spf - len(fr)))
-                    sleep_until(deadline)
-                    sends.append(now_ns())
-                    self.sock.sendto(pack_rtp(pt, seq, seq * self.spf, ssrc, seq == 0,
-                                              g711.encode(fr, self.codec)), self.peer)
-                    seq += 1
-                    self.diag.frames_sent += 1
-                    deadline += frame_ns
-                break
-
-            t = now_ns()
-            if t >= next_cn:
-                self.sock.sendto(pack_rtp(pt, seq, seq * self.spf, ssrc, seq == 0,
+            # Dedicated emit path. Crucially this does NOT stay inside the receive
+            # loop: checking the emit deadline once per received frame quantises
+            # emission to the frame period, adding a uniform 0-20 ms error. That
+            # error is invisible if every test delay is a multiple of the frame time,
+            # because the deadline then lands on a frame boundary. Nothing further
+            # needs to be received after the trigger, so the loop is left behind.
+            #
+            # Comfort noise continues on its grid right up to the emission instant. The
+            # last comfort frame may overlap the first response frame in media time; the
+            # response carries the later timestamp and wins the overlap on reassembly,
+            # which is the truthful account of a response that began mid-frame. Stopping
+            # comfort noise a frame early instead leaves a hole the analyser sees as loss.
+            while next_cn < emit_at:
+                sleep_until(next_cn)
+                cn_sends.append(now_ns())
+                self.sock.sendto(pack_rtp(pt, seq, rtp_ts_at(next_cn), ssrc, seq == 0,
                                           cn_payload), self.peer)
                 seq += 1
                 self.diag.frames_sent += 1
-                next_cn += int(self.ptime_ms * 1e6)
+                next_cn += frame_ns
+            sleep_until(emit_at)
+            self.diag.actual_emit_ns = now_ns()
+            # Response frames are scheduled from the intended instant, not the actual
+            # one, so their timestamps advance by exactly one frame each on the media
+            # clock. Actual send times go to the pacing report, which is where any
+            # lateness belongs.
+            deadline = emit_at
+            for i in range(0, len(self.response), self.spf):
+                fr = self.response[i : i + self.spf]
+                if len(fr) < self.spf:
+                    fr = np.pad(fr, (0, self.spf - len(fr)))
+                sleep_until(deadline)
+                sends.append(now_ns())
+                self.sock.sendto(pack_rtp(pt, seq, rtp_ts_at(deadline), ssrc, seq == 0,
+                                          g711.encode(fr, self.codec)), self.peer)
+                seq += 1
+                self.diag.frames_sent += 1
+                deadline += frame_ns
+            break
 
         self.diag.pacing = PacingReport.measure(sends, self.ptime_ms)
+        self.diag.cn_pacing = PacingReport.measure(cn_sends, self.ptime_ms)
 
 
 # ---------------------------------------------------------------------------
@@ -396,6 +445,8 @@ def serve_responder(listen_host: str, listen_port: int, floor_dbov: float = -62.
                               else round(responder.diag.self_error_ms, 4)),
             "pacing_max_ms": (None if not np.isfinite(responder.diag.pacing.max_ms)
                               else round(responder.diag.pacing.max_ms, 4)),
+            "cn_pacing_max_ms": (None if not np.isfinite(responder.diag.cn_pacing.max_ms)
+                                 else round(responder.diag.cn_pacing.max_ms, 4)),
         }
         print(f"  {spec.get('call_id')}: delay {spec.get('delay_ms')} ms  "
               f"rx {last['frames_received']}  tx {last['frames_sent']}  "

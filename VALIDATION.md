@@ -70,6 +70,10 @@ number.
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-08-31 | 3.14.4 | pair as above, same AZ, private addressing; `netem delay 50ms 15ms distribution paretonormal` on the responder's `enp39s0` egress only, caller qdisc untouched | **passed** | 50 ms declared, difference **+47.75 ms**, error **−2.25 ms** against a 5 ms tolerance, standard error 1.81 ms; 40/40 usable in both sweeps; advisory `high_late_discard` on 38/40 of the netem sweep, so its playout figures are upper bounds | [baseline](results/validation/ec2-c7i-caller-2026-08-31-stage3-baseline.json), [netem](results/validation/ec2-c7i-caller-2026-08-31-stage3-netem.json) |
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-08-31 | 3.14.4 | as above but `netem delay 50ms` with no jitter, isolating the instrument from netem's distribution | **passed** | 50 ms declared, difference **+50.08 ms**, error **+0.08 ms**, standard error 0.03 ms, residual sd 0.11 ms; 20/20 usable, no advisory flags | [baseline](results/validation/ec2-c7i-caller-2026-08-31-stage3-baseline.json), [no-jitter](results/validation/ec2-c7i-caller-2026-08-31-stage3-netem-nojitter.json) |
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-08-31 | 3.14.4 | as above plus `loss 1%`; run to exercise the advisory flags, not to measure accuracy | **advisory exercised** | 20/20 usable, `high_loss` on 3 calls and `high_late_discard` on 19, measured loss mean 1.24% against 1% declared | [json](results/validation/ec2-c7i-caller-2026-08-31-stage3-loss.json) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-03 | 3.14.4 | fresh baseline, `netem delay 0ms`, captures kept | **passed** (baseline) | 40/40 usable, residual +0.65 ms, sd 0.04 ms; Sunday's was +0.60, so the pair and path are unchanged | [json](results/validation/ec2-c7i-caller-2026-09-03-stage3-baseline.json), [captures](results/captures/ec2-c7i-2026-09-03/stage3-baseline/) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-03 | 3.14.4 | `netem delay 137ms`, no jitter, a second injected value off the frame grid | **passed** | 137 ms declared, difference **+137.01 ms**, error **+0.01 ms**, standard error 0.02 ms; 20/20 usable. `high_late_discard` on 20/20 is a responder artefact, see notes | [json](results/validation/ec2-c7i-caller-2026-09-03-stage3-netem137.json), [captures](results/captures/ec2-c7i-2026-09-03/stage3-netem137/) |
+| `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-03 | 3.14.4 | `netem delay 50ms 15ms distribution paretonormal`, captures kept for re-analysis at any playout target | **collected** | 40/40 usable; late-discard rate 3.2% at a 40 ms target, 1.1% at 60, zero from 80 ms. Playout spread does not fall with target, for the responder reason in the notes | [json](results/validation/ec2-c7i-caller-2026-09-03-stage3-netem50j15.json), [captures](results/captures/ec2-c7i-2026-09-03/stage3-netem50j15/) |
+| `ec2-c7i-caller` | 2 | 2026-09-03 | 3.14.4 | `--ptime 10`, 10 ms packetisation | **passed** | 20/20 usable, residual +0.23 ms, sd 0.05 ms, worst tx pacing 0.14 ms; first ledger row at 10 ms | [json](results/validation/ec2-c7i-caller-2026-09-03-stage2-ptime10.json), [captures](results/captures/ec2-c7i-2026-09-03/stage2-ptime10/) |
 
 ### Notes
 
@@ -128,6 +132,40 @@ day, with a regression test.
 The reference responder's self-error stayed at +0.00 ms across all 120 remote calls, so the
 frame-quantisation defect recorded in `METHOD.md` §6 remains fixed when the responder is a
 separate process on a separate machine.
+
+**The `ec2-c7i` pair, 2026-09-03, and two reference-responder defects found in the
+captures.** The 137 ms run recovered its declared delay to +0.01 ms, so the instrument has
+now recovered two different injected values, 50 and 137 ms, each to within a tenth of a
+millisecond. Ingress figures and the differential gate are unaffected by everything that
+follows.
+
+Two things in these runs did not match expectation, and because the raw captures were kept
+both could be diagnosed locally rather than argued about. First, the 137 ms run with no
+jitter at all raised `high_late_discard` on every call. Per-packet transit in the captures
+shows why: the responder's first comfort-noise frame goes out on time and the next two go
+out 30 and 15 ms late, after which the stream is regular but permanently offset. The
+responder paces comfort noise off a 50 ms `recvfrom` timeout, so while no caller packets are
+arriving it can only emit a frame every 50 ms and slips 30 ms per frame. The handshake
+window before caller media arrives is longer under a larger netem delay, so the accumulated
+slip was 17.6 ms at baseline and 44.7 ms at 137 ms, and only the latter exceeds a 40 ms
+playout target. The first frame, sent before any slip, becomes the minimum-transit anchor,
+and every later frame is then "late" by the slip. Second, re-analysing the jittered captures
+at targets from 40 to 150 ms shows late discards falling from 3.2% to zero by 80 ms, which
+is the useful half of the finding, while the playout residual standard deviation stays at
+9.54 ms at every target. The responder stamps response frames with RTP timestamps that
+continue its comfort-noise count, while their emission instant jumps to the programmed
+delay, so the timestamps carry a phase error that varies call to call once the handshake
+timing is jittered. Playout MRL is derived through the RTP timestamp and inherits that
+error; ingress is derived from arrival and does not.
+
+Both defects are in the calibration source and neither is in the instrument, but they mean
+these captures cannot demonstrate the playout buffer absorbing jitter over a real path, and
+that claim rests on stage 1 alone until the responder is corrected and the jittered sweep
+repeated. The corrections are to pace comfort noise on its own deadline regardless of
+receive activity, and to derive RTP timestamps from elapsed media time rather than from the
+frame count. Both landed in `loopback.py` on 2026-09-04 with regression tests that
+reproduce each signature on loopback; the jittered sweep over the pair is still to be
+repeated, and until it is the playout rows above stand as recorded.
 
 **`mbp-m1pro` stage 2.** Five attempts across 21 to 24 August 2026 all ended in
 refusal, with usable calls ranging from 0/20 (during background media indexing) to

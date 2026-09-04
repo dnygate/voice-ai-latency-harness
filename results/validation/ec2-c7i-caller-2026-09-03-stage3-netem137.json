@@ -1,0 +1,415 @@
+{
+  "host": "Linux-7.0.0-1006-aws-x86_64-with-glibc2.43",
+  "python": "3.14.4",
+  "stage": 3,
+  "playout_target_ms": 40.0,
+  "captures_dir": "results/captures/ec2-c7i-2026-09-03/stage3-netem137",
+  "peer": "172.31.37.9:9000",
+  "control_failures": 0,
+  "advisory_flags": {
+    "high_late_discard": 20
+  },
+  "rows": [
+    {
+      "delay_ms": 137.0,
+      "call": 0,
+      "mrl_ingress_ms": 274.63,
+      "mrl_playout_ms": 352.84,
+      "residual_ms": 137.63,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-137-0.jsonl.gz",
+      "capture_sha256": "8e2df5dd26682aab708beb3f846136909ce1a2eb310878261dce6da9172d8b53",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 1,
+      "mrl_ingress_ms": 274.661,
+      "mrl_playout_ms": 352.954,
+      "residual_ms": 137.661,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-137-1.jsonl.gz",
+      "capture_sha256": "5baa69f6b610537f16149170b575482473ce816340180ff4cdbd8604ea314052",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 2,
+      "mrl_ingress_ms": 274.583,
+      "mrl_playout_ms": 353.227,
+      "residual_ms": 137.583,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.006,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-137-2.jsonl.gz",
+      "capture_sha256": "71cdfb885e103f5c83035b7abacd01afb58e1cf5ecac1bba40e23f82a925abb6",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 137.0,
+      "call": 3,
+      "mrl_ingress_ms": 274.65,
+      "mrl_playout_ms": 353.067,
+      "residual_ms": 137.65,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-137-3.jsonl.gz",
+      "capture_sha256": "06fede550e449844bed2c8d7f24c79f560303ebb3da2b7e3c09e5a539115ca74",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 188
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 0,
+      "mrl_ingress_ms": 350.621,
+      "mrl_playout_ms": 433.181,
+      "residual_ms": 137.621,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-213-0.jsonl.gz",
+      "capture_sha256": "92eef79bed93e9c4a1580702e80219d1ae2aee50fa3d21f4c9ab05fb1d1097e5",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 192
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 1,
+      "mrl_ingress_ms": 350.7,
+      "mrl_playout_ms": 433.093,
+      "residual_ms": 137.7,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-213-1.jsonl.gz",
+      "capture_sha256": "9dbe635222df63b110598eba80be17473820c45fad97882fede698b6489ff4c4",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 192
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 2,
+      "mrl_ingress_ms": 350.598,
+      "mrl_playout_ms": 432.927,
+      "residual_ms": 137.598,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-213-2.jsonl.gz",
+      "capture_sha256": "aa5afa1a64275d14e5214814a26922f1155f8d633271539243370dc330ff182d",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 192
+    },
+    {
+      "delay_ms": 213.0,
+      "call": 3,
+      "mrl_ingress_ms": 350.564,
+      "mrl_playout_ms": 433.059,
+      "residual_ms": 137.564,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-213-3.jsonl.gz",
+      "capture_sha256": "8a4c5c7b055c9fa71c60ff541c6825042b6aec9c06110a9784bcbe086a10d164",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 192
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 0,
+      "mrl_ingress_ms": 490.653,
+      "mrl_playout_ms": 573.015,
+      "residual_ms": 137.653,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-353-0.jsonl.gz",
+      "capture_sha256": "4d0e72baafb476f803beaa89d440abc358233fcecf1447cd35cd958bc895a291",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 199
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 1,
+      "mrl_ingress_ms": 490.741,
+      "mrl_playout_ms": 572.976,
+      "residual_ms": 137.741,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.003,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-353-1.jsonl.gz",
+      "capture_sha256": "c2e242d1a8f844eeafdfeda979ba99d1a188f580a505f17f7cbaaca2eb736b71",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 199
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 2,
+      "mrl_ingress_ms": 490.773,
+      "mrl_playout_ms": 573.057,
+      "residual_ms": 137.773,
+      "responder_self_error_ms": 0.006,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-353-2.jsonl.gz",
+      "capture_sha256": "d208368d7bd6ded37f564c31fda1458cd00492c41bc7dc45f79d097f1806f53f",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 199
+    },
+    {
+      "delay_ms": 353.0,
+      "call": 3,
+      "mrl_ingress_ms": 490.734,
+      "mrl_playout_ms": 573.031,
+      "residual_ms": 137.734,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-353-3.jsonl.gz",
+      "capture_sha256": "4a954c80f11ffe9b19cea765c8de27c199ddbd98973bd94fba92a09efa9b2867",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 199
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 0,
+      "mrl_ingress_ms": 594.829,
+      "mrl_playout_ms": 673.062,
+      "residual_ms": 137.829,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-457-0.jsonl.gz",
+      "capture_sha256": "286958bea7c1ba611a6b4a8f67505ef2950ab522e2a08ae81405ed6fb9b67eb0",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 204
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 1,
+      "mrl_ingress_ms": 594.611,
+      "mrl_playout_ms": 672.993,
+      "residual_ms": 137.611,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-457-1.jsonl.gz",
+      "capture_sha256": "a5e46f2d9f967f28638228eaee4a30ac5abacad67e3a2456921c597bc2519eab",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 204
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 2,
+      "mrl_ingress_ms": 594.651,
+      "mrl_playout_ms": 673.03,
+      "residual_ms": 137.651,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-457-2.jsonl.gz",
+      "capture_sha256": "0cb7c60a7321b373b68f7e843463d7e1d6237f79a4c23f257fd657ff9552aa47",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 204
+    },
+    {
+      "delay_ms": 457.0,
+      "call": 3,
+      "mrl_ingress_ms": 594.729,
+      "mrl_playout_ms": 673.007,
+      "residual_ms": 137.729,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.005,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-457-3.jsonl.gz",
+      "capture_sha256": "89ac28ca9293d26c124df2f402a5578893eee298cf9d6364e1827346889f4171",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 204
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 0,
+      "mrl_ingress_ms": 943.562,
+      "mrl_playout_ms": 1033.029,
+      "residual_ms": 137.562,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.006,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-806-0.jsonl.gz",
+      "capture_sha256": "34646e3381ba66d28d8a6b4a004c08345a18d03491886e109ec9e72c864a0ea3",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 222
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 1,
+      "mrl_ingress_ms": 943.645,
+      "mrl_playout_ms": 1032.974,
+      "residual_ms": 137.645,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.0,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-806-1.jsonl.gz",
+      "capture_sha256": "5515995eba397240ce01cd0a245a8967194fbb1328d4f09f07f49db13a4b213d",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 222
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 2,
+      "mrl_ingress_ms": 943.571,
+      "mrl_playout_ms": 1032.797,
+      "residual_ms": 137.571,
+      "responder_self_error_ms": 0.0,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-806-2.jsonl.gz",
+      "capture_sha256": "f18893fc722682c7255472df60a05f1a44cffaf31d0f4d5f1554b011917453d1",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 222
+    },
+    {
+      "delay_ms": 806.0,
+      "call": 3,
+      "mrl_ingress_ms": 943.756,
+      "mrl_playout_ms": 1032.992,
+      "residual_ms": 137.756,
+      "responder_self_error_ms": 0.001,
+      "tx_pacing_p99_ms": 0.001,
+      "tx_pacing_max_ms": 0.004,
+      "rx_loss_pct": 0.0,
+      "playout_target_ms": 40.0,
+      "capture_path": "results/captures/ec2-c7i-2026-09-03/stage3-netem137/lb-806-3.jsonl.gz",
+      "capture_sha256": "92afa6980653723cafe7196b0dbcc3ba3b0716b8c192ea4f89b67264020440d2",
+      "qc_ok": true,
+      "qc_flags": [
+        "high_late_discard"
+      ],
+      "tx_packets": 150,
+      "rx_packets": 222
+    }
+  ],
+  "verdict": []
+}
