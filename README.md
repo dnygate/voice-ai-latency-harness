@@ -18,7 +18,7 @@ only as trustworthy as the row of the machine that produced it.
 ## Quick start
 
     pip install numpy scipy pytest
-    python -m pytest tests -q          # 44 tests, ~8 s
+    python -m pytest tests -q          # 45 tests, ~10 s
     python -m harness.validate        # instrument accuracy sweep, ~40 s
 
 `validate` replies to each prompt at a known delay and reports how accurately that
@@ -34,10 +34,12 @@ before the harness is pointed at a real system.
 | 3. remote + netem | end to end across a real NIC, two clocks | **passing**, per host pair ([VALIDATION.md](VALIDATION.md)) |
 | 4. SIP caller | real calls against a real system | not implemented |
 
-Instrument accuracy, stage 1: **bias −0.40 ms, p95 |error| 2.38 ms** on a clean G.711
-channel with 20 ms frames, t0 annotation exact with zero variance. Those figures have
-been reproduced to four significant figures on two unrelated machines, which is what a
-host-independent stage should do.
+Instrument accuracy, stage 1: **bias +0.01 ms, p95 |error| 0.10 ms** on a clean G.711
+channel with 20 ms frames, t0 annotation exact with zero variance and t1 located to the
+sample under every onset variant (spread 0.02 ms on a hard onset). Stage 1 is
+host-independent and reproduces to four significant figures across unrelated machines.
+Until 2026-09-04 the headline read −0.40 ms and 2.38 ms; the difference was the ninth
+self-caught instrument error, recorded in [METHOD.md](METHOD.md) §6.
 
 Stage 2 over real sockets, on a qualified host: **bias +0.21 ms, sd 0.02 ms** across
 20 of 20 usable calls. Stage 3 across a real NIC and two hosts recovers a `netem`-injected

@@ -88,7 +88,7 @@ starting at full level. Onset is therefore computed under three named variants:
 
 `headline` is the reported figure. **The spread across all three is the measurement's
 onset-definition uncertainty and must be published alongside any headline number.** On
-a hard onset the spread is under 1 ms; on a 150 ms TTS ramp it approaches 10 ms.
+a hard onset the spread is 0.02 ms; on a 150 ms TTS ramp it approaches 8.78 ms.
 
 Levels are in dBov, referenced to full-scale RMS 32768.
 
@@ -194,31 +194,39 @@ subtracting that expected offset. 1200 calls, 10 delays from 50 to 1500 ms, 8 se
 
 | condition | ingress bias | ingress sd | playout bias | playout sd |
 |---|---|---|---|---|
-| clean, μ-law | −0.40 ms | 0.70 ms | −0.40 ms | 0.70 ms |
-| clean, A-law | −0.43 ms | 0.72 ms | −0.43 ms | 0.72 ms |
-| clean, L16 control | −0.35 ms | 0.67 ms | −0.35 ms | 0.67 ms |
-| 10 ms frames | −1.26 ms | 1.17 ms | −1.26 ms | 1.17 ms |
-| 30 ms frames | −1.56 ms | 1.45 ms | −1.56 ms | 1.45 ms |
-| jitter, mean 10 ms | −0.86 ms | 6.98 ms | −0.22 ms | 1.86 ms |
-| jitter, mean 30 ms | +0.35 ms | 19.97 ms | +2.27 ms | 3.05 ms |
-| transit +50 ms | −0.40 ms | 0.70 ms | −0.40 ms | 0.70 ms |
-| transit +50, jitter 20 | −1.52 ms | 12.83 ms | +2.75 ms | 2.16 ms |
-| high channel noise | −0.82 ms | 0.84 ms | −0.82 ms | 0.84 ms |
+| clean, μ-law | +0.01 ms | 0.05 ms | +0.01 ms | 0.05 ms |
+| clean, A-law | +0.01 ms | 0.05 ms | +0.01 ms | 0.05 ms |
+| clean, L16 control | +0.01 ms | 0.05 ms | +0.01 ms | 0.05 ms |
+| 10 ms frames | +0.02 ms | 0.05 ms | +0.02 ms | 0.05 ms |
+| 30 ms frames | +0.01 ms | 0.05 ms | +0.01 ms | 0.05 ms |
+| jitter, mean 10 ms | +0.61 ms | 6.54 ms | +1.26 ms | 0.82 ms |
+| jitter, mean 30 ms | +1.83 ms | 19.64 ms | +3.75 ms | 2.38 ms |
+| transit +50 ms | +0.01 ms | 0.05 ms | +0.01 ms | 0.05 ms |
+| transit +50, jitter 20 | −1.11 ms | 12.82 ms | +3.15 ms | 1.97 ms |
+| high channel noise | +0.07 ms | 0.12 ms | +0.07 ms | 0.12 ms |
 
-**Headline instrument accuracy: bias −0.40 ms, p95 |error| 2.38 ms on a clean channel
+**Headline instrument accuracy: bias +0.01 ms, p95 |error| 0.10 ms on a clean channel
 with a 20 ms frame grid.** t0 annotation is exact on the reference signal, with zero
-variance. This licenses claims about differences of tens of milliseconds between
-systems; it does not license claims about differences of two.
+variance, and t1 is located to the sample under every onset variant. The instrument's own
+contribution is therefore an order of magnitude below the onset-definition uncertainty on
+ramped synthesised speech (§2.2), and that spread, published with every figure, is what
+bounds a comparison between real systems: differences of tens of milliseconds are
+licensed outright, and differences of a few milliseconds stand only where the spread is
+shown to be smaller than they are. Before finding nine (§6) the headline read −0.40 ms
+bias with p95 2.38 ms, all of it the t1 refinement.
 
 Behaviours confirmed rather than merely tolerated:
 
 - Ingress sd tracks predicted channel jitter sd; the playout buffer absorbs it,
-  cutting sd from 19.97 ms to 3.05 ms at 30 ms mean jitter.
+  cutting sd from 19.64 ms to 2.38 ms at 30 ms mean jitter, and stage 3 has since
+  reproduced that collapse over a real path (`VALIDATION.md`).
 - A deliberately mispaced sender (6 ms transmit jitter) is rejected on all 80 calls,
   confirming the pacing gate works rather than assuming it.
 - 10% loss raises the advisory flags on ≥18 of 20 calls.
-- Onset-definition spread: 0.99 ms hard onset, 4.69 ms at a 60 ms TTS ramp, 9.84 ms at
-  150 ms — the dominant uncertainty term on real systems.
+- Onset-definition spread: 0.02 ms hard onset, 4.23 ms at a 60 ms TTS ramp, 8.78 ms at
+  150 ms — the dominant uncertainty term on real systems. On a hard onset the three
+  variants now agree to the sample, which they should; the 0.99 ms formerly reported
+  there was noise-chasing in the refinement, not ambiguity in the onset.
 
 ### 5.1 Stage 2: live sockets
 
@@ -242,7 +250,7 @@ by QC is the gate working as designed, and preflight predicts that outcome befor
 call is placed, which is the answer to whether stage 2 timing on such a host is
 representative: an unfit host is detected and excluded rather than averaged in.
 
-## 6. Eight findings that changed the method
+## 6. Nine findings that changed the method
 
 Recorded because each is a mistake a reader may be making.
 
@@ -314,6 +322,33 @@ timestamp is derived from scheduled emission time on a media clock, as a real se
 sample clock would produce. Both were invisible to stage 1, whose synthetic stream is
 constructed correctly by definition, and to stage 2 on loopback, where the handshake window
 is too short to slip. They needed a real path and captures that were kept.
+
+**The t1 refinement chased noise exactly as the t0 refinement once did, and hid for
+longer.** Finding two replaced instantaneous amplitude with a short sliding RMS in the
+sub-frame refinement of t0. The same refinement of t1 in the analyser kept using
+instantaneous amplitude, and nobody noticed, because every responder the analyser had
+ever seen placed its response on the 5 ms analysis grid: the synthetic stream by
+construction of the test, and the live responder by stamping frames from a count. No
+channel noise ever preceded an onset inside the window the refinement searched. The
+corrected responder of finding eight stamps from a media clock and so places the response
+where it truly began, and in a stage 3 baseline group where that was 14 to 20 ms into the
+final comfort-noise frame the first window to clear the threshold was mostly noise; a
+noise peak fired the refinement up to a frame early and pulled MRL down by 2 to 4 ms on
+seven of eight calls, while the neighbouring delay group, whose onsets fell a few samples
+after a window boundary, read +0.60 ms exactly. The effect was in stage 1 all along,
+wearing the signature of noise-chasing: bias that depended on the threshold, −0.03 ms on
+the strict variant and −2.26 ms on the sensitive over one 80-call sweep, and a 0.99 ms
+spread between variants on a hard onset, where a hard onset admits no ambiguity. The
+remedy is finding two's, mirrored: a 2 ms sliding RMS whose first supra-threshold window
+ends on the true first sample, searched from one analysis window before the first
+above-threshold frame because that frame may hold the onset's first samples without
+clearing the threshold itself. Headline clean-channel bias went from −0.40 to +0.01 ms and
+p95 |error| from 2.38 to 0.10 ms; the hard-onset variant spread went from 0.99 to 0.02 ms;
+and every kept stage 3 capture from both days re-derived to a baseline of +0.6 ms with sd
+0.07 and a 137 ms differential within 0.05 ms, without an instance being started. Two
+lessons. A fix applied to one boundary has to be checked against its mirror. And an
+instrument validated only against sources that share its own alignment assumptions is
+validated against itself.
 
 **An advisory flag nobody can see is not an advisory.** The stage 3 console printed QC
 flags only when a call failed, so a jittered sweep in which 38 of 40 calls raised

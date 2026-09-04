@@ -57,6 +57,10 @@ number.
 
 ## Results
 
+Stage 1 rows dated before 2026-09-04 were derived with the t1 refinement described under
+finding nine in `METHOD.md` §6; the analyser was corrected that day and the row of that date
+carries the current figures. Earlier rows stand as dated evidence of the analyser they ran.
+
 | machine | stage | date | python | conditions | outcome | key figures | evidence |
 |---|---|---|---|---|---|---|---|
 | `method-reference` | 1 | 2026-08 | — | — | **passed** | clean-channel headline bias −0.40 ms, sd 0.70 ms, p95 \|e\| 2.38 ms | `METHOD.md` §5 |
@@ -77,6 +81,7 @@ number.
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-04 | 3.14.4 | corrected responder (`ef39ddf`), `netem delay 0ms`, captures kept | **passed** (baseline) | 40/40 usable; as analysed residual −0.74 ms, sd 1.63, which the notes trace to the t1 onset refinement rather than the path; re-deriving t1 from response-packet arrival gives +0.60 ms, sd 0.02, matching both earlier baselines | [json](results/validation/ec2-c7i-caller-2026-09-04-stage3-baseline.json), [captures](results/captures/ec2-c7i-2026-09-04/stage3-baseline/) |
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-04 | 3.14.4 | corrected responder, `netem delay 137ms`, no jitter | **passed** | 137 declared, difference **+137.38 ms**, error **+0.38 ms**, SE 0.31; 20/20 usable; **no advisory flags**, against `high_late_discard` on 20/20 with the old responder; comfort-noise gap 50.0 to 20.9 ms and transit phase −87 to −0.09 ms on the same call | [json](results/validation/ec2-c7i-caller-2026-09-04-stage3-netem137.json), [captures](results/captures/ec2-c7i-2026-09-04/stage3-netem137/) |
 | `ec2-c7i-caller` + `ec2-c7i-responder` | 3 | 2026-09-04 | 3.14.4 | corrected responder, `netem delay 50ms 15ms distribution paretonormal`, captures kept | **collected, stage 3 closed** | 40/40 usable; re-analysed at every target from 40 to 150 ms: ingress residual sd 11.60, **playout residual sd 2.68** (old responder 9.54), late discard 4.4% at 40 ms, 1.4% at 60, zero from 80. The buffer absorbs jitter over a real path as stage 1 predicted at 3.05 | [json](results/validation/ec2-c7i-caller-2026-09-04-stage3-netem50j15.json), [captures](results/captures/ec2-c7i-2026-09-04/stage3-netem50j15/) |
+| `mbp-m1pro` | 1 | 2026-09-04 | 3.12.13 | macOS 26.5.1, mains; analyser corrected for finding nine | **passed**, all gates | clean-channel headline bias +0.01 ms, sd 0.05 ms, p95 \|e\| 0.10 ms; hard-onset variant spread 0.02 ms (was 0.99); annotator exact over 1200 calls | [json](results/validation/mbp-m1pro-2026-09-04-stage1.json) |
 
 ### Notes
 
@@ -194,10 +199,24 @@ group was 14 to 20 ms into the final comfort-noise frame, so the first window to
 threshold was mostly noise and a noise peak fired the refinement up to a frame early. The
 effect is present in stage 1 too, where the current refinement's bias runs from −0.03 ms on
 the strict variant to −2.26 on the sensitive, the threshold dependence that noise-chasing
-produces, and it contributes to the published −0.40 ms headline bias and the 0.99 ms
-variant spread on a hard onset, which on a hard onset should be near zero. The remedy is
-the one finding two applied to t0, a short sliding RMS, and once it lands every capture
-kept here can be re-derived without an instance. Pending as of 2026-09-04.
+produces, and it contributed the whole of the published −0.40 ms headline bias and the
+0.99 ms variant spread on a hard onset, which on a hard onset should be near zero. The
+remedy, finding two's sliding RMS mirrored for a start boundary, landed the same day. Stage
+1 now reads +0.01 ms bias, p95 0.10 ms, spread 0.02 ms, and every kept stage 3 capture
+re-derived under it without an instance:
+
+| sweep, re-derived 2026-09-04 | ingress residual | playout residual sd |
+|---|---|---|
+| 09-03 baseline, old responder | +0.67 ms, sd 0.07 | 4.04 (stamping artefact, finding eight) |
+| 09-04 baseline, corrected responder | **+0.63 ms, sd 0.07** (as run: −0.74, sd 1.63) | **0.10** |
+| 09-03 netem 137 ms, old responder | +137.67 ms, sd 0.07 (differential 0.00 ms) | 4.11 |
+| 09-04 netem 137 ms, corrected | **+137.58 ms, sd 0.10** (as run: +136.64, sd 0.80; differential −0.05 ms) | **0.13** |
+| 09-04 netem 50 ms + 15 ms jitter, corrected | +48.22 ms, sd 9.17 | **2.20** |
+
+Two things follow. The as-run rows above stand as evidence of the analyser that produced
+them, and the re-derivation is the demonstration that keeping raw captures is worth the
+disk. And the old responder's playout artefact shows even on its jitter-free runs, at 4 ms,
+which the as-run figures had never prompted anyone to look at.
 
 **`mbp-m1pro` stage 2.** Five attempts across 21 to 24 August 2026 all ended in
 refusal, with usable calls ranging from 0/20 (during background media indexing) to

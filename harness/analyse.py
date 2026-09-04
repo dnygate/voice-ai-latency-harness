@@ -289,11 +289,32 @@ def _detect_onset(samples: np.ndarray, variant: OnsetVariant, noise_floor_dbov: 
             run += 1
             if run >= need:
                 first_frame = int(starts[k - need + 1])
-                seg = np.abs(samples[first_frame : first_frame + win].astype(np.int32))
-                # refine to the first sample in that frame above the noise floor amplitude
-                amp_thresh = max(1.0, 32768.0 * 10 ** (thresh / 20.0) * 0.5)
-                hit = np.flatnonzero(seg >= amp_thresh)
-                return first_frame + (int(hit[0]) if hit.size else 0)
+                # Sub-frame refinement with a short sliding RMS, mirroring the t0 rule in
+                # prompts.py and for the same reason: instantaneous |x| crosses threshold
+                # on isolated noise peaks. Here that pulled t1 up to a frame EARLY, biasing
+                # MRL low, the opposite direction to the t0 defect (METHOD.md §6, finding
+                # nine). It hid for as long as every responder placed its response on the
+                # 5 ms analysis grid, so no noise ever preceded an onset inside its window.
+                #
+                # Zero bias on a hard onset: one full-level sample lifts a 2 ms RMS window
+                # far above threshold, so the first supra-threshold window ENDS on the true
+                # first sample, hence + fine - 1. A lone noise sample would need to be some
+                # eleven sigma to do the same. The search opens one analysis window before
+                # first_frame because that window may hold the onset's first few samples
+                # without clearing the 5 ms threshold itself; by construction it was below
+                # threshold as a whole, or it would have started the run.
+                fine = max(4, int(round(sr * 0.002)))
+                lo = max(search_from, first_frame - win, 0)
+                hi = min(len(samples), first_frame + win)
+                seg = samples[lo:hi].astype(np.float64)
+                if seg.size >= fine:
+                    idx = np.arange(seg.size - fine + 1)[:, None] + np.arange(fine)[None, :]
+                    rms = np.sqrt(np.mean(seg[idx] ** 2, axis=1))
+                    db = 20.0 * np.log10(np.maximum(rms, 1e-9) / 32768.0)
+                    hit = np.flatnonzero(db > thresh)
+                    if hit.size:
+                        return min(hi - 1, lo + int(hit[0]) + fine - 1)
+                return first_frame
         else:
             run = 0
     return None

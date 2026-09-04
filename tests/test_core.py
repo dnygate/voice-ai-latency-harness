@@ -161,6 +161,28 @@ def test_onset_definition_uncertainty_grows_with_tts_ramp():
     assert ramp150 > ramp60, (ramp60, ramp150)
 
 
+def test_hard_onset_is_located_to_the_sample_under_every_variant():
+    """METHOD.md §6, finding nine. t1's sub-frame refinement used instantaneous amplitude,
+    the mechanism finding two removed from t0, and a noise peak inside the first
+    above-threshold window pulled the onset up to a frame early, biasing MRL low. It hid
+    for as long as every responder placed its response on the 5 ms analysis grid. On a hard
+    onset all three variants must agree to the sample: their spread is then a fraction of
+    a sample and so is the clean-channel error, where before it was a fraction of a frame
+    and depended on the threshold, the signature of noise-chasing."""
+    from harness.analyse import DEFAULT_VARIANTS
+
+    errs = {v.name: [] for v in DEFAULT_VARIANTS}
+    for delay in (137, 353, 806):
+        for seed in range(12):
+            r = analyse_capture(reference_capture(float(delay), seed=seed * 7 + delay))
+            for name, v in r.variants.items():
+                errs[name].append(v.mrl_ms - delay)
+    for name, e in errs.items():
+        assert np.percentile(np.abs(e), 95) < 0.25, (name, float(np.percentile(np.abs(e), 95)))
+    biases = [float(np.mean(errs[n])) for n in ("sensitive", "headline", "strict")]
+    assert max(biases) - min(biases) < 0.15, biases
+
+
 def test_negative_mrl_is_reported_not_swallowed():
     """A system that answers before the caller finishes must produce a signed result."""
     pcm, _, ann = annotated_prompt(seed=11, trail_silence_ms=900.0)
