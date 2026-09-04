@@ -18,7 +18,8 @@ only as trustworthy as the row of the machine that produced it.
 ## Quick start
 
     pip install numpy scipy pytest
-    python -m pytest tests -q          # 45 tests, ~10 s
+    pip install sipmessage        # only for stage 4 signalling
+    python -m pytest tests -q          # 64 tests, ~20 s
     python -m harness.validate        # instrument accuracy sweep, ~40 s
 
 `validate` replies to each prompt at a known delay and reports how accurately that
@@ -66,6 +67,7 @@ measures whether that host can pace a frame grid accurately enough to be trusted
     harness/loopback.py stage 2 over real UDP and stage 3 across two hosts, with a
                         control channel and a differential gate against a baseline
     harness/preflight.py host capability check: can this machine hold a frame grid
+    harness/sip.py      SIP signalling for stage 4: SDP, digest auth, request building
     tests/              correctness, including G.711 against frozen golden vectors
 
 ## Design rules

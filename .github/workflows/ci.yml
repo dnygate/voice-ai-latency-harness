@@ -20,7 +20,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Install
-        run: pip install numpy scipy pytest
+        # sipmessage is the stage 4 signalling extra. Installed here so tests/test_sip.py
+        # runs rather than skipping on every leg; the harness itself still needs only
+        # numpy for stages 1 to 3, which is what the README promises.
+        run: pip install numpy scipy pytest sipmessage
       - name: Preflight
         # Informational only. Shared CI runners cannot pace a frame grid, so a marginal
         # verdict is expected. It runs so the log records what the runner could do.
