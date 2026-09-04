@@ -1,0 +1,89 @@
+{
+  "schema": "vlh-reference/1",
+  "generated": "2026-09-04",
+  "sample_rate": 8000,
+  "purpose": "Frozen reference signals. Bytes are the oracle, not the generator: a signal regenerated from a seed changes when the generator changes, which is how the G.711 vectors came to be frozen. `truth` is a property of each signal and never changes. `annotator_now` records what this revision of the code produces, so a regression is visible as a difference rather than becoming the new baseline.",
+  "conformance": "An independent implementation should reproduce `truth.speech_end_sample` on the stimulus to within a stated tolerance, and should publish its onset figures for the three responses so its detector can be compared with ours. This is what the IETF draft needs in order to specify a conformance test rather than an algorithm.",
+  "files": {
+    "stimulus-2s.wav": {
+      "role": "caller stimulus; the t0 conformance signal",
+      "sha256": "9f2a54ddf471698172270f2c5d3a0e0c86d1246a730a1a8c9198382a49d7bf1b",
+      "n_samples": 24000,
+      "truth": {
+        "speech_end_sample": 18400,
+        "note": "index the generator stopped writing speech at; exact, not judged"
+      },
+      "annotator_now": {
+        "speech_end_sample": 18400,
+        "speech_start_sample": 2340,
+        "method": "energy+decay-hysteresis",
+        "version": "vlh-prompt/1"
+      }
+    },
+    "greeting-1p1s.wav": {
+      "role": "unprompted greeting; the METHOD.md 2.3 conformance signal",
+      "sha256": "9a96d9331a635e85130b01390f2ab6ea6a9523e42063dfd793d779340a3148f5",
+      "n_samples": 20000,
+      "truth": {
+        "greeting_start_sample": 1600,
+        "greeting_end_sample": 10400,
+        "trailing_silence_ms": 1200.0,
+        "note": "detection must land at or after greeting_end_sample; early is the -2985 ms failure of finding seven, late costs nothing"
+      }
+    },
+    "response-hard.wav": {
+      "role": "system response, hard onset",
+      "sha256": "65c627b5e96ccfce6677710461a1bccd092195265e67f6cd55d06cf86308fc40",
+      "n_samples": 12800,
+      "truth": {
+        "first_response_sample": 2400,
+        "onset_ramp_ms": 0.0,
+        "note": "sample at which the response begins. On a ramp the detected onset legitimately trails it, and the spread across variants is the onset-definition uncertainty METHOD.md 2.2 publishes"
+      },
+      "annotator_now": {
+        "onset_by_variant": {
+          "sensitive": 2400,
+          "headline": 2400,
+          "strict": 2400
+        },
+        "noise_floor_dbov": -63.65
+      }
+    },
+    "response-ramp60.wav": {
+      "role": "system response, 60 ms ramp",
+      "sha256": "b8050f23f0b34635b6f81db45a0f46bee99f5ae480bee06832d83e8f1e5fb790",
+      "n_samples": 12800,
+      "truth": {
+        "first_response_sample": 2400,
+        "onset_ramp_ms": 60.0,
+        "note": "sample at which the response begins. On a ramp the detected onset legitimately trails it, and the spread across variants is the onset-definition uncertainty METHOD.md 2.2 publishes"
+      },
+      "annotator_now": {
+        "onset_by_variant": {
+          "sensitive": 2439,
+          "headline": 2454,
+          "strict": 2467
+        },
+        "noise_floor_dbov": -63.65
+      }
+    },
+    "response-ramp150.wav": {
+      "role": "system response, 150 ms ramp",
+      "sha256": "c72d4e1a10ffac262f19e26afe5962463b014f7dd935f0e51185782b6df6a5c3",
+      "n_samples": 12800,
+      "truth": {
+        "first_response_sample": 2400,
+        "onset_ramp_ms": 150.0,
+        "note": "sample at which the response begins. On a ramp the detected onset legitimately trails it, and the spread across variants is the onset-definition uncertainty METHOD.md 2.2 publishes"
+      },
+      "annotator_now": {
+        "onset_by_variant": {
+          "sensitive": 2503,
+          "headline": 2520,
+          "strict": 2570
+        },
+        "noise_floor_dbov": -63.65
+      }
+    }
+  }
+}

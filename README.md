@@ -19,7 +19,7 @@ only as trustworthy as the row of the machine that produced it.
 
     pip install numpy scipy pytest
     pip install sipmessage        # only for stage 4 signalling
-    python -m pytest tests -q          # 64 tests, ~20 s
+    python -m pytest tests -q          # 75 tests, ~20 s
     python -m harness.validate        # instrument accuracy sweep, ~40 s
 
 `validate` replies to each prompt at a known delay and reports how accurately that
@@ -69,6 +69,8 @@ measures whether that host can pace a frame grid accurately enough to be trusted
     harness/preflight.py host capability check: can this machine hold a frame grid
     harness/sip.py      SIP signalling for stage 4: SDP, digest auth, request building
     tests/              correctness, including G.711 against frozen golden vectors
+    tests/reference/    frozen reference signals with a truth manifest: the stimulus,
+                        a greeting, and responses at a hard onset and two ramps
 
 ## Design rules
 
@@ -80,7 +82,9 @@ costs GPU hours.
 Neither alone is publishable.
 
 **Onset is a distribution, not a number.** Three onset definitions; the spread is the
-uncertainty and it travels with the headline figure.
+uncertainty and it travels with the headline figure. `tests/reference/` freezes signals
+whose true boundaries are exact by construction, so an independent implementation can
+check its own detector against ours rather than against a described algorithm.
 
 **The harness refuses measurements it cannot trust.** Bad transmit pacing means an
 unreliable t0, so the call is dropped rather than reported.
