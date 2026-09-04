@@ -123,6 +123,7 @@ class ResponderDiag:
     frames_sent: int = 0
     pacing: PacingReport = field(default_factory=PacingReport)
     cn_pacing: PacingReport = field(default_factory=PacingReport)
+    media_origin_ns: int = 0   # origin of the RTP media clock, for exact stamp checks
 
     @property
     def self_error_ms(self) -> float:
@@ -204,6 +205,7 @@ class ReferenceResponder(threading.Thread):
         # 2026-09-03 captures. Real senders stamp from their sample clock. So does this.
         origin = now_ns()
         next_cn = origin
+        self.diag.media_origin_ns = origin
 
         def rtp_ts_at(scheduled_ns: int) -> int:
             return int(round((scheduled_ns - origin) * sr / 1e9))
