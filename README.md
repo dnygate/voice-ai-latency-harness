@@ -11,7 +11,10 @@ two terms of an eight-term sum and omits the largest one, endpointing. This meas
 the sum.
 
 See [METHOD.md](METHOD.md) for definitions, the uncertainty budget, and validated
-instrument accuracy. Read it before quoting any number this produces.
+instrument accuracy. Read it before quoting any number this produces. The metric itself
+is specified independently of this implementation in an IETF Internet-Draft,
+[draft-nygate-ippm-mrl](https://datatracker.ietf.org/doc/draft-nygate-ippm-mrl/), where any disagreement between the two is a defect here
+rather than there.
 [VALIDATION.md](VALIDATION.md) records per-machine validation results; a figure is
 only as trustworthy as the row of the machine that produced it.
 

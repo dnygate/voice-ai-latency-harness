@@ -4,6 +4,12 @@ Method specification, v0.1. This document defines the measured quantities and st
 the instrument's validated accuracy. It is the normative reference: where code and
 document disagree, the document is the specification and the code is the bug.
 
+The metric is also specified independently of this implementation in
+[draft-nygate-ippm-mrl](https://datatracker.ietf.org/doc/draft-nygate-ippm-mrl/),
+posted 2026-09-07. That document carries the definition and no results; this one carries
+both, along with the instrument's accuracy and the findings in §6. Where the two differ on
+the metric, the Internet-Draft is the one an independent implementer should follow.
+
 ## 1. The quantity under measurement
 
 The voice AI market quotes **model-side first-audio latency**: the interval from a
